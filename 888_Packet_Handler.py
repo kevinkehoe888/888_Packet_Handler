@@ -101,7 +101,14 @@ def login_to_server():
   ssh_client=paramiko.SSHClient()
   ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
   try:
-    k = paramiko.RSAKey.from_private_key_file(filename, password=password)
+    try:
+      filename
+    except NameError:
+      console_output_field["state"] = "normal"
+      console_output_field.insert('end', 'No ID_RSA file has been linked\n')
+      console_output_field["state"] = "disabled"
+    else:
+      k = paramiko.RSAKey.from_private_key_file(filename, password=password)
   except paramiko.ssh_exception.SSHException:
     console_output_field["state"] = "normal"
     console_output_field.insert('end', 'Login has been Unuccessful\n')
