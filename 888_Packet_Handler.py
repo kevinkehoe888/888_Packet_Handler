@@ -12,6 +12,7 @@ import threading
 import tempfile
 import binascii
 import atexit
+from stat import S_ISDIR, S_ISREG
 
 # How to build
 # pyinstaller --onefile --hidden-import babel.numbers --windowed 888_Packet_Handler.py
@@ -23,13 +24,13 @@ root.title("888 Packet Handler")
 root.geometry("1300x750")
 
 supplier_options = [
-"LSports",
-"SportRadar",
-"Metric Gaming",
-"At The Races",
-"Racing UK",
+"lsport - LSports",
+"sportradar - SportRadar",
+"METRIC - Metric Gaming",
+"AT_THE_RACES - At The Races",
+"RACING_UK - Racing UK",
 "SIS - SPIN Horse Racing",
-"CMT",
+"CMT - CMT",
 "PA - Press Association",
 "PAGH - Dogs",
 "BR - BetRadar",
@@ -40,31 +41,13 @@ supplier_options = [
 "BGIN_SC - BetGenius_SC"
 ]
 
-supplier_directories = [
-  [f"/mnt/feeds_data/fi_lsports_connector/markets_meta/", f"/mnt/feeds_data/fi_lsports_connector/outright_league_markets_meta/", f"/mnt/feeds_data/fi_lsports_connector/outright_leagues_meta/", f"/mnt/feeds_data/fi_lsports_connector/outright_meta/"],
-  [f"/mnt/feeds_data/fi_sportradar_connector/1/", f"/mnt/feeds_data/fi_sportradar_connector/2/", f"/mnt/feeds_data/fi_sportradar_connector/3/", f"/mnt/feeds_data/fi_sportradar_connector/4/", f"/mnt/feeds_data/fi_sportradar_connector/5/", f"/mnt/feeds_data/fi_sportradar_connector/6/", f"/mnt/feeds_data/fi_sportradar_connector/12/", f"/mnt/feeds_data/fi_sportradar_connector/13/", f"/mnt/feeds_data/fi_sportradar_connector/16/", f"/mnt/feeds_data/fi_sportradar_connector/19/", f"/mnt/feeds_data/fi_sportradar_connector/20/", f"/mnt/feeds_data/fi_sportradar_connector/21/", f"/mnt/feeds_data/fi_sportradar_connector/22/", f"/mnt/feeds_data/fi_sportradar_connector/23/", f"/mnt/feeds_data/fi_sportradar_connector/24/", f"/mnt/feeds_data/fi_sportradar_connector/29/", f"/mnt/feeds_data/fi_sportradar_connector/31/", f"/mnt/feeds_data/fi_sportradar_connector/32/", f"/mnt/feeds_data/fi_sportradar_connector/34/", f"/mnt/feeds_data/fi_sportradar_connector/37/", f"/mnt/feeds_data/fi_sportradar_connector/109/", f"/mnt/feeds_data/fi_sportradar_connector/111/", f"/mnt/feeds_data/fi_sportradar_connector/137/", f"/mnt/feeds_data/fi_sportradar_connector/153/", f"/mnt/feeds_data/fi_sportradar_connector/195/"],
-  [f"/mnt/feeds_data/i-0bd644c5c4eb7964c/metric_connector/METRIC/", f"/mnt/feeds_data/i-05dbabedb7c00a400/metric_connector/METRIC/"],
-  [f"/mnt/feeds_data/i-02c9341646f83a3fc/feed_normalizer/AT_THE_RACES/", f"/mnt/feeds_data/i-05e69aedb921eb3c1/feed_normalizer/AT_THE_RACES/", f"/mnt/feeds_data/i-0570b41c2388f6bf6/feed_normalizer/AT_THE_RACES/", f"/mnt/feeds_data/i-0744c3e5e81090143/feed_normalizer/AT_THE_RACES/", f"/mnt/feeds_data/i-03230d6944a3b8bdc/feed_normalizer/AT_THE_RACES/", f"/mnt/feeds_data/i-04819bf2455666cbe/feed_normalizer/AT_THE_RACES/", f"/mnt/feeds_data/i-013525a6f4ea171e5/feed_normalizer/AT_THE_RACES/", f"/mnt/feeds_data/i-069466a0fcbd99b48/feed_normalizer/AT_THE_RACES/"],
-  [f"/mnt/feeds_data/i-02c9341646f83a3fc/feed_normalizer/RACING_UK/", f"/mnt/feeds_data/i-05e69aedb921eb3c1/feed_normalizer/RACING_UK/", f"/mnt/feeds_data/i-0570b41c2388f6bf6/feed_normalizer/RACING_UK/", f"/mnt/feeds_data/i-0744c3e5e81090143/feed_normalizer/RACING_UK/", f"/mnt/feeds_data/i-03230d6944a3b8bdc/feed_normalizer/RACING_UK/", f"/mnt/feeds_data/i-04819bf2455666cbe/feed_normalizer/RACING_UK/", f"/mnt/feeds_data/i-013525a6f4ea171e5/feed_normalizer/RACING_UK/", f"/mnt/feeds_data/i-069466a0fcbd99b48/feed_normalizer/RACING_UK/"],
-  [f"/mnt/feeds_data/i-02c9341646f83a3fc/feed_normalizer/SIS/", f"/mnt/feeds_data/i-05e69aedb921eb3c1/feed_normalizer/SIS/", f"/mnt/feeds_data/i-0570b41c2388f6bf6/feed_normalizer/SIS/", f"/mnt/feeds_data/i-0744c3e5e81090143/feed_normalizer/SIS/", f"/mnt/feeds_data/i-03230d6944a3b8bdc/feed_normalizer/SIS/", f"/mnt/feeds_data/i-04819bf2455666cbe/feed_normalizer/SIS/", f"/mnt/feeds_data/i-013525a6f4ea171e5/feed_normalizer/SIS/"],
-  [f"/mnt/feeds_data/i-04819bf2455666cbe/feed_connector/CMT/"],
-  [f"/mnt/feeds_data/i-03230d6944a3b8bdc/feed_normalizer/PA/"],
-  [f"/mnt/feeds_data/i-0570b41c2388f6bf6/feed_normalizer/PAGH/"],
-  [f"/mnt/feeds_data/i-05e69aedb921eb3c1/feed_normalizer/BR/"],
-  [f"/mnt/feeds_data/i-05e69aedb921eb3c1/drivein/BRIN/"],
-  [f"/mnt/feeds_data/i-013525a6f4ea171e5/feed_normalizer/SSOL/"],
-  [f"/mnt/feeds_data/i-013525a6f4ea171e5/drivein/SSOLIN/"],
-  [f"/mnt/feeds_data/i-0bd644c5c4eb7964c/feed_connector/BGIN/", f"/mnt/feeds_data/i-05dbabedb7c00a400/feed_connector/BGIN/"],
-  [f"/mnt/feeds_data/i-0bd644c5c4eb7964c/feed_connector/BGIN_SC/", f"/mnt/feeds_data/i-05dbabedb7c00a400/feed_connector/BGIN_SC/"]
-]
-
 supplier_local_folders= [
   ["LSports_Packet_Folder"],
   ["Sportrader_Packet_Folder"],
-  ["Metric_Packets_from_64c", "Metric_Packets_from_400"],
-  ["ATR_Packets_from_3fc", "ATR_Packets_from_3c1", "ATR_Packets_from_bf6", "ATR_Packets_from_143", "ATR_Packets_from_bdc", "ATR_Packets_from_cbe", "ATR_Packets_from_1e5", "ATR_Packets_from_b48"],
-  ["RUK_Packets_from_3fc", "RUK_Packets_from_3c1", "RUK_Packets_from_bf6", "RUK_Packets_from_143", "RUK_Packets_from_bdc", "RUK_Packets_from_cbe", "RUK_Packets_from_1e5", "RUK_Packets_from_b48"],
-  ["SIS_Packets_from_3fc", "SIS_Packets_from_3c1", "SIS_Packets_from_bf6", "SIS_Packets_from_143", "SIS_Packets_from_bdc", "SIS_Packets_from_cbe", "SIS_Packets_from_1e5"],
+  ["Metric_Packets_from_400", "Metric_Packets_from_64c"],
+  ["ATR_Packets_from_1e5", "ATR_Packets_from_cbe", "ATR_Packets_from_bdc", "ATR_Packets_from_143", "ATR_Packets_from_3fc", "ATR_Packets_from_3c1", "ATR_Packets_from_b48", "ATR_Packets_from_bf6"],
+  ["RUK_Packets_from_1e5", "RUK_Packets_from_cbe", "RUK_Packets_from_bdc", "RUK_Packets_from_143", "RUK_Packets_from_3fc", "RUK_Packets_from_3c1", "RUK_Packets_from_b48", "RUK_Packets_from_bf6"],
+  ["SIS_Packets_from_1e5", "SIS_Packets_from_cbe", "SIS_Packets_from_bdc", "SIS_Packets_from_143", "SIS_Packets_from_3fc", "SIS_Packets_from_3c1", "SIS_Packets_from_bf6"],
   ["CMT_Packets_from_cbe"],
   ["PA_Packets_from_bdc"],
   ["PAGH_Packets_from_bf6"],
@@ -72,8 +55,8 @@ supplier_local_folders= [
   ["BRIN_Packets_from_3c1"],
   ["SSOL_Packets_from_1e5"],
   ["SSOLIN_Packets_from_1e5"],
-  ["BGIN_Packets_from_64c", "BGIN_Packets_from_400"],
-  ["BGIN_SC_Packets_from_64c", "BGIN_SC_Packets_from_400"]
+  ["BGIN_Packets_from_400", "BGIN_Packets_from_64c"],
+  ["BGIN_SC_Packets_from_400", "BGIN_SC_Packets_from_64c"]
 ]
 
 events = []
@@ -85,6 +68,11 @@ date_counter = 0
 date_labels = []
 date_labels_y_pos = 420
 
+starting_directories = [] # To store fist directories found
+temp_directories = [] # Will add new subfolders for each directory
+supplier_directories = [] # This will hold the final directoires for that supplier
+folder_depth = 0
+
 def UploadAction(event=None):
   if search_file_location["state"] == 'disabled':
     search_file_location["state"] = "normal"
@@ -95,15 +83,16 @@ def UploadAction(event=None):
     search_file_location["state"] = "disabled"
 
 def login_to_server():
-  console_output_field["state"] = "normal"
-  console_output_field.insert('end', 'Logging in\n')
-  console_output_field["state"] = "disabled"
+  global hostname_str
+  global username_str
+  global password_str
+  hostname = hostname_input.get()
   username = username_input.get()
   password = password_input.get()
-  global username_str
+  hostname_str = hostname
   username_str = username
-  global password_str
   password_str = password
+  hostname_input.delete(0, "end")
   username_input.delete(0, "end")
   password_input.delete(0, "end")
   search_file_location["state"] = "normal"
@@ -111,12 +100,31 @@ def login_to_server():
   search_file_location["state"] = "disabled"
   ssh_client=paramiko.SSHClient()
   ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-  k = paramiko.RSAKey.from_private_key_file(filename, password=password)
-  authentication = ssh_client.connect(hostname='jump.spectateprod.com', username=username_str, pkey=k)
+  try:
+    k = paramiko.RSAKey.from_private_key_file(filename, password=password)
+  except paramiko.ssh_exception.SSHException:
+    console_output_field["state"] = "normal"
+    console_output_field.insert('end', 'Login has been Unuccessful\n')
+    console_output_field["state"] = "disabled"
+    hostname_input["state"] = "normal"
+    hostname_input.delete(0, "end")
+    username_input["state"] = "normal"
+    username_input.delete(0, "end")
+    password_input["state"] = "normal"
+    password_input.delete(0, "end")
+    search_file_button["state"] = "normal"
+    search_file_location.delete(0, "end")
+    login_button["state"] = "normal"
+    username_str = None
+    password_str = None
+    return
+  authentication = ssh_client.connect(hostname=hostname_str, username=username_str, pkey=k)
   if authentication is None:
     console_output_field["state"] = "normal"
     console_output_field.insert('end', 'Login has been Successful\n')
     console_output_field["state"] = "disabled"
+    hostname_input["state"] = "disabled"
+    hostname_input.delete(0, "end")
     username_input["state"] = "disabled"
     username_input.delete(0, "end")
     password_input["state"] = "disabled"
@@ -132,12 +140,9 @@ def login_to_server():
     delete_date_button["state"] = "normal"
     add_event_details["state"] = "normal"
     start_gathering_packets_details["state"] = "normal"
-  else:
-    username_str = None
-    password_str = None
 
 def date_disabler(value):
-  if chosen_options_value.get() == 'LSports' or chosen_options_value.get() == 'SportRadar':
+  if chosen_options_value.get() == str(supplier_options[0].split(' - ', 1)[1]) or chosen_options_value.get() == str(supplier_options[1].split(' - ', 1)[1]):
     add_date_button["state"] = "disabled"
     delete_date_button["state"] = "disabled"
   else:
@@ -175,9 +180,20 @@ def delete_date_function():
 def add_event_details_function():
   global event_counter
   global date_counter
+  global chosen_options_value
 
+  supplier = chosen_options_value.get()
   #Grab values for Supplier, event_id and feed_event_id
-  supplier = str(supplier_options.index(chosen_options_value.get()))
+  for i in supplier_options:
+    if supplier in i:
+      supplier = str(supplier_options.index(i))
+      print(supplier)
+      if len(supplier) == len(i):
+        supplier = str(supplier_options.index(i))
+        print(supplier)
+      else:
+        continue
+  #supplier = str(supplier_options.index(chosen_options_value.get()))
   eventid = event_id_input.get()
   feedeventid = feed_event_id_input.get()
 
@@ -196,10 +212,12 @@ def add_event_details_function():
     console_output_field["state"] = "disabled"
     console_output_field.see("end")
     return
-  elif not dates and int(supplier_options.index(chosen_options_value.get())) == 0 and int(supplier_options.index(chosen_options_value.get())) == 1:
+  #elif not dates and int(supplier_options.index(chosen_options_value.get())) == 0 and int(supplier_options.index(chosen_options_value.get())) == 1:
+  elif not dates and int(supplier) == 0 and int(supplier) == 1:
     print("LSports or Sportadars Event")
     return
-  elif not dates and int(supplier_options.index(chosen_options_value.get())) in range(2, 14):
+  #elif not dates and int(supplier_options.index(chosen_options_value.get())) in range(2, 14):
+  elif not dates and int(supplier) in range(2, 14):
     print("No dates have not been entered")
     console_output_field["state"] = "normal"
     console_output_field.insert('end', "No dates have been selected. Please add in a date" +  ' \n')
@@ -215,24 +233,26 @@ def add_event_details_function():
   events[event_counter].append(eventid)
   events[event_counter].append(feedeventid)
 
-  if int(events[event_counter][0]) == supplier_options.index('LSports') and not dates: 
+  #if int(events[event_counter][0]) == supplier_options.index('LSports') and not dates: 
+  if int(events[event_counter][0]) == int(supplier) and not dates: 
     events[event_counter].append('00000000')
-  elif int(events[event_counter][0]) == supplier_options.index('SportRadar') and not dates:
+  #elif int(events[event_counter][0]) == supplier_options.index('SportRadar') and not dates:
+  elif int(events[event_counter][0]) == int(supplier) and not dates:
     events[event_counter].append('00000000')
 
   #Adds all the event into the array and sets counter up for next one
   dates_string = ""
   yesterday = int(datetime.strftime(datetime.now() - timedelta(1), '%Y%m%d'))
   for i in dates:
-    if int(events[event_counter][0]) == supplier_options.index('Metric Gaming') or int(events[event_counter][0]) == supplier_options.index('CMT') or int(events[event_counter][0]) == supplier_options.index('PA - Press Association') or int(events[event_counter][0]) == supplier_options.index('PAGH - Dogs') or int(events[event_counter][0]) == supplier_options.index('SSOL - Sporting Solutions') or int(events[event_counter][0]) == supplier_options.index('SSOLIN - Sporting Solutions InPlay') or int(events[event_counter][0]) == supplier_options.index('BGIN - BetGenius') or int(events[event_counter][0]) == supplier_options.index('BGIN_SC - BetGenius_SC'):
+    if int(events[event_counter][0]) == 2 or 6 or 7 or 8 or range(11,14):#supplier_options.index('Metric Gaming') or int(events[event_counter][0]) == supplier_options.index('CMT') or int(events[event_counter][0]) == supplier_options.index('PA - Press Association') or int(events[event_counter][0]) == supplier_options.index('PAGH - Dogs') or int(events[event_counter][0]) == supplier_options.index('SSOL - Sporting Solutions') or int(events[event_counter][0]) == supplier_options.index('SSOLIN - Sporting Solutions InPlay') or int(events[event_counter][0]) == supplier_options.index('BGIN - BetGenius') or int(events[event_counter][0]) == supplier_options.index('BGIN_SC - BetGenius_SC'):
       date = str(i.get_date()).translate({ord('-'):None})
       if int(date) >= 20200429 and int(date) <= yesterday:
-        print("Date for supplier " + str(supplier_options[int(events[event_counter][0])]) + " is " + date)
+        print("Date for supplier " + str(supplier_options[int(supplier)].split(" - ", 1)[1]) + " is " + date)
         events[event_counter].append(str(i.get_date()).translate({ord('-'):None}))
         dates_string = dates_string + str(i.get_date()) + " "
       else:
         console_output_field["state"] = "normal"
-        console_output_field.insert('end', "Date " + date + " is not in in range for " + str(supplier_options[int(events[event_counter][0])]) + ' \n')
+        console_output_field.insert('end', "Date " + date + " is not in in range for " + str(supplier_options[int(supplier)].split(" - ", 1)[1]) + ' \n')
         console_output_field.insert('end', "Dates must be between dates 2020-04-29 and " + str(datetime.strftime(datetime.now() - timedelta(1), '%Y-%m-%d')) + ' \n')
         console_output_field["state"] = "disabled"
         console_output_field.see("end")
@@ -242,15 +262,15 @@ def add_event_details_function():
         console_output_field.see("end")
         print(event_counter)
         return
-    elif int(events[event_counter][0]) == supplier_options.index('At The Races'):
+    elif int(events[event_counter][0]) == 3: #supplier_options.index('At The Races'):
       date = str(i.get_date()).translate({ord('-'):None})
       if int(date) >= 20200902 and int(date) <= 20210131:
-        print("Date for supplier " + str(supplier_options[int(events[event_counter][0])]) + " is " + date)
+        print("Date for supplier " + str(supplier_options[int(supplier)].split(" - ", 1)[1]) + " is " + date)
         events[event_counter].append(str(i.get_date()).translate({ord('-'):None}))
         dates_string = dates_string + str(i.get_date()) + " "
       else:
         console_output_field["state"] = "normal"
-        console_output_field.insert('end', "Date " + date + " is not in in range for " + str(supplier_options[int(events[event_counter][0])]) + ' \n')
+        console_output_field.insert('end', "Date " + date + " is not in in range for " + str(supplier_options[int(supplier)].split(" - ", 1)[1]) + ' \n')
         console_output_field.insert('end', "Dates must be between dates 2020-09-02 and 2021-01-31" + ' \n')
         console_output_field["state"] = "disabled"
         console_output_field.see("end")
@@ -260,15 +280,15 @@ def add_event_details_function():
         console_output_field.see("end")
         return
 
-    elif int(events[event_counter][0]) == supplier_options.index('Racing UK') or int(events[event_counter][0]) == supplier_options.index('SIS - SPIN Horse Racing'):
+    elif int(events[event_counter][0]) == 3 or 4: # supplier_options.index('Racing UK') or int(events[event_counter][0]) == supplier_options.index('SIS - SPIN Horse Racing'):
       date = str(i.get_date()).translate({ord('-'):None})
       if int(date) >= 20201208 and int(date) <= 20210131:
-        print("Date for supplier " + str(supplier_options[int(events[event_counter][0])]) + " is " + date)
+        print("Date for supplier " + str(supplier_options[int(supplier)].split(" - ", 1)[1]) + " is " + date)
         events[event_counter].append(str(i.get_date()).translate({ord('-'):None}))
         dates_string = dates_string + str(i.get_date()) + " "
       else:
         console_output_field["state"] = "normal"
-        console_output_field.insert('end', "Date " + date + " is not in in range for " + str(supplier_options[int(events[event_counter][0])]) + ' \n')
+        console_output_field.insert('end', "Date " + date + " is not in in range for " + str(supplier_options[int(supplier)].split(" - ", 1)[1]) + ' \n')
         console_output_field.insert('end', "Dates must be between dates 2020-12-08 and 2021-01-31" + ' \n')
         console_output_field["state"] = "disabled"
         console_output_field.see("end")
@@ -278,15 +298,15 @@ def add_event_details_function():
         console_output_field.see("end")
         return
     
-    elif int(events[event_counter][0]) == supplier_options.index('BR - BetRadar'):
+    elif int(events[event_counter][0]) == 9:#supplier_options.index('BR - BetRadar'):
       date = str(i.get_date()).translate({ord('-'):None})
       if int(date) >= 20200817 and int(date) <= 20201031:
-        print("Date for supplier " + str(supplier_options[int(events[event_counter][0])]) + " is " + date)
+        print("Date for supplier " + str(supplier_options[int(supplier)].split(" - ", 1)[1]) + " is " + date)
         events[event_counter].append(str(i.get_date()).translate({ord('-'):None}))
         dates_string = dates_string + str(i.get_date()) + " "
       else:
         console_output_field["state"] = "normal"
-        console_output_field.insert('end', "Date " + date + " is not in in range for " + str(supplier_options[int(events[event_counter][0])]) + ' \n')
+        console_output_field.insert('end', "Date " + date + " is not in in range for " + str(supplier_options[int(supplier)].split(" - ", 1)[1]) + ' \n')
         console_output_field.insert('end', "Dates must be between dates 2020-08-17 and 2020-10-31" + ' \n')
         console_output_field["state"] = "disabled"
         console_output_field.see("end")
@@ -296,15 +316,15 @@ def add_event_details_function():
         console_output_field.see("end")
         return
     
-    elif int(events[event_counter][0]) == supplier_options.index('BRIN - BetRadar Inplay'):
+    elif int(events[event_counter][0]) == 10:#supplier_options.index('BRIN - BetRadar Inplay'):
       date = str(i.get_date()).translate({ord('-'):None})
       if int(date) >= 20200817 and int(date) <= 20201130:
-        print("Date for supplier " + str(supplier_options[int(events[event_counter][0])]) + " is " + date)
+        print("Date for supplier " + str(supplier_options[int(supplier)].split(" - ", 1)[1]) + " is " + date)
         events[event_counter].append(str(i.get_date()).translate({ord('-'):None}))
         dates_string = dates_string + str(i.get_date()) + " "
       else:
         console_output_field["state"] = "normal"
-        console_output_field.insert('end', "Date " + date + " is not in in range for " + str(supplier_options[int(events[event_counter][0])]) + ' \n')
+        console_output_field.insert('end', "Date " + date + " is not in in range for " + str(supplier_options[int(supplier)].split(" - ", 1)[1]) + ' \n')
         console_output_field.insert('end', "Dates must be between dates 2020-08-17 and 2020-11-30" + ' \n')
         console_output_field["state"] = "disabled"
         console_output_field.see("end")
@@ -316,13 +336,19 @@ def add_event_details_function():
     #events[event_counter].append(str(i.get_date()).translate({ord('-'):None}))
     #dates_string = dates_string + str(i.get_date()) + " "
   dates_string = dates_string + "\n"
-  event_counter = event_counter + 1
 
   console_output_field["state"] = "normal"
-  console_output_field.insert('end', 'Event ' + str(eventid) + ' with the feed event ' + str(feedeventid) + ' has been added with the following dates:\n')
-  console_output_field.insert('end', dates_string)
-  console_output_field["state"] = "disabled"
-  console_output_field.see("end")
+  if int(events[event_counter][0]) == int(supplier) and not dates:
+    console_output_field.insert('end', 'Event ' + str(eventid) + ' with the feed event ' + str(feedeventid) + ' has been added \n')
+    console_output_field["state"] = "disabled"
+    console_output_field.see("end")
+  else:
+    console_output_field.insert('end', 'Event ' + str(eventid) + ' with the feed event ' + str(feedeventid) + ' has been added with the following dates:\n')
+    console_output_field.insert('end', dates_string)
+    console_output_field["state"] = "disabled"
+    console_output_field.see("end")
+
+  event_counter = event_counter + 1
 
   #Resets everything after adding event details
   #chosen_options_value.set(supplier_options[2])
@@ -344,15 +370,17 @@ def start_gathering_packets_details_functions():
   number_of_events = range(len(events))
   events_length_compare = len(events)
   for i in number_of_events:
-    print(i)
-    print(len(events))
     number_of_dates = range(3, len(events[i]))
     event_folder = os.path.abspath(os.path.dirname(__file__)) + "/Packets_for_Event_" + str(events[i][1])
-    os.makedirs(event_folder)
+    if os.path.isdir(event_folder):
+      continue
+    else:
+      os.makedirs(event_folder)
     console_output_field["state"] = "normal"
     console_output_field.insert('end', 'Gathering Packets for Event ' + str(events[i][1]) + '\n')
     console_output_field["state"] = "disabled"
     console_output_field.see("end")
+    supplier_directories.clear()
     start = time.time()
     for j in number_of_dates:
       year = events[i][j][0:4]
@@ -360,24 +388,153 @@ def start_gathering_packets_details_functions():
       day = events[i][j][6:8]
       for idx, val in enumerate(supplier_options):
         if int(events[i][0]) == idx:
-          for index, value in enumerate(supplier_directories[idx]):
-            if supplier_options[idx] == 'LSports':
-              remote_file = f"{value}"
-              local_file = event_folder + "/Packets"
-            elif supplier_options[idx] == 'SportRadar':
-              remote_file = f"{value}" + "sr_match" + events[i][2][-8:]
-              local_file = event_folder + "/Packets"
+          val = val.split(' - ')[0]
+          console_output_field["state"] = "normal"
+          console_output_field.insert('end', 'Searching for folders this will take some time.\n')
+          console_output_field["state"] = "disabled"
+          def get_directory():
+            global folder_depth
+            global starting_directories
+            chosen_supplier = val
+            ssh_client=paramiko.SSHClient()
+            ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            ssh_client.connect(hostname=hostname_str, username=username_str, password=password_str)
+            ftp_client=ssh_client.open_sftp()
+
+            # Checking if the Supplier is LSports or Sportsradar
+            if chosen_supplier == supplier_options[0].split(' - ')[0] or chosen_supplier == supplier_options[1].split(' - ')[0]:
+              print("Supplier is " + chosen_supplier)
+              if not starting_directories:
+                for entry in ftp_client.listdir_attr('/'):
+                  mode = entry.st_mode
+                  if S_ISDIR(mode):
+                    starting_directories.append('/' + entry.filename + '/')     
+              if chosen_supplier == supplier_options[0].split(' - ')[0]:
+                feed_event_id = events[i][2]
+                #print(feed_event_id)
+              else:
+                feed_event_id = events[i][2][-8:]
+                #print(feed_event_id)
+              
+              for z in starting_directories:
+                try:
+                  for entry in ftp_client.listdir_attr(str(z)):
+                    mode = entry.st_mode
+                    if S_ISDIR(mode):
+                      directory = str(z) + entry.filename + '/'
+                      if chosen_supplier in directory:
+                        if str(feed_event_id) in str(entry.filename) and str(chosen_supplier) == str(supplier_options[1].split(' - ')[0]):
+                          print("Found " + chosen_supplier + " Event")
+                          print(directory)
+                          supplier_directories.append(str(z) + entry.filename + '/')
+                          return
+                        elif feed_event_id in directory and str(chosen_supplier) == str(supplier_options[0].split(' - ')[0]):
+                            print(directory)
+                            supplier_directories.append(str(z) + entry.filename + '/')
+                        else:
+                          if str(chosen_supplier) == str(supplier_options[0].split(' - ')[0]):
+                            if not entry.filename.isdigit():
+                              supplier_directories.append(str(z) + entry.filename + '/')
+                          temp_directories.append(str(z) + entry.filename + '/')
+                      else:
+                          temp_directories.append(str(z) + entry.filename + '/')
+                except WindowsError:
+                    continue
+
+              if not supplier_directories:
+                starting_directories.clear()
+                starting_directories = starting_directories + temp_directories
+                temp_directories.clear()
+                get_directory()
+              elif supplier_directories:
+                feed_event_ticker = 0
+                slash_fix_array = []
+                for x in supplier_directories:
+                  if feed_event_id in x:
+                    print("Found the Feed Event ID")
+                    feed_event_ticker = feed_event_ticker + 1
+                    starting_directories.clear()
+                    temp_directories.clear()
+                    slash_fix_array.append(x)
+                  elif str(x).count('/') <= 4:
+                    continue
+                  else:
+                    slash_fix_array.append(x)
+                
+                supplier_directories.clear()
+                supplier_directories.extend(slash_fix_array)
+                slash_fix_array.clear()
+
+                if feed_event_ticker == 0:
+                  starting_directories.clear()
+                  starting_directories = starting_directories + temp_directories
+                  temp_directories.clear()
+                  get_directory()
+
             else:
-              remote_file = f"{value}{year}/{month}/{day}.tgz"
-              folder_dir = os.path.abspath(os.path.dirname(__file__)) + '/' + f'{supplier_local_folders[idx][index]}/{year}/{month}/'
-              local_file = os.path.abspath(os.path.dirname(__file__)) + '/' + f'{supplier_local_folders[idx][index]}/{year}/{month}/{day}.tgz'
+              if not starting_directories:
+                for entry in ftp_client.listdir_attr('/'):
+                    mode = entry.st_mode
+                    if S_ISDIR(mode):
+                      starting_directories.append('/' + entry.filename + '/')
+                folder_depth = folder_depth + 1
+              else:
+                folder_depth = folder_depth + 1
+
+              for z in starting_directories:
+                try:
+                  for entry in ftp_client.listdir_attr(str(z)):
+                    mode = entry.st_mode
+                    if S_ISDIR(mode):
+                      directory = str(z) + entry.filename + '/'
+                      if chosen_supplier + '/' in directory:
+                        if folder_depth >= 4:
+                            supplier_directories.append(str(z) + entry.filename + '/')
+                      else:
+                        if supplier_options[0].split(' - ')[0] in directory:
+                            continue
+                        elif supplier_options[1].split(' - ')[0] in directory:
+                            continue
+                        else:
+                            temp_directories.append(str(z) + entry.filename + '/')              
+                except WindowsError:
+                    continue
             
-            if supplier_options[idx] == 'LSports':
-              print("LSports didnt need folder")
-              #continue
-            elif supplier_options[idx] == 'SportRadar':
-              print("SportRadar didnt need folder")
-              #continue
+            if not supplier_directories:
+              starting_directories.clear()
+              starting_directories = starting_directories + temp_directories
+              temp_directories.clear()
+              get_directory()
+            else:
+              starting_directories.clear()
+              temp_directories.clear()
+              folder_depth = 0
+          
+          get_directory()
+
+          console_output_field["state"] = "normal"
+          console_output_field.insert('end', 'Folders have been found.\n')
+          console_output_field["state"] = "disabled"
+          
+          for folder_num, folder in enumerate(supplier_directories):
+            print("Checking directories")
+            if int(0) <= int(idx) <= int(1):
+              print("Supplier is " + supplier_options[idx])
+              remote_file = f"{folder}"
+              digit_folder = None
+              if len([int(s) for s in re.findall(r'\b\d+\b', f"{folder}")]) == 0:
+                remote_file = f"{folder}"
+              else:
+                digit_folder = f"{folder}"
+              local_file = event_folder + "/Packets"
+            elif int(2) <= int(idx) <= int(14):
+              print("Supplier is " + supplier_options[idx])
+              remote_file = f"{folder}{year}/{month}/{day}.tgz"
+              folder_dir = os.path.abspath(os.path.dirname(__file__)) + '/' + supplier_local_folders[idx][folder_num] + f'/{year}/{month}/'
+              local_file = os.path.abspath(os.path.dirname(__file__)) + '/' + supplier_local_folders[idx][folder_num] + f'/{year}/{month}/{day}.tgz'
+
+            if int(0) <= int(idx) <= int(1):
+              print(supplier_options[idx].split(' - ', 1)[1] + " didnt need folder")
             elif os.path.exists(folder_dir):
               print("Folder Created")
               print(folder_dir)
@@ -392,17 +549,17 @@ def start_gathering_packets_details_functions():
               console_output_field.insert('end', 'Found Packets in remote server\n')
               console_output_field["state"] = "disabled"
               console_output_field.see("end")
-              if supplier_options[idx] == 'LSports':
+              if int(idx) == int(0):
                 ssh_client=paramiko.SSHClient()
                 ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                ssh_client.connect(hostname='jump.spectateprod.com', username=username_str, password=password_str)
+                ssh_client.connect(hostname=hostname_str, username=username_str, password=password_str)
                 ftp_client=ssh_client.open_sftp()
                 print("DOWNLOADING " + remote_file)
+                console_output_field["state"] = "normal"
+                console_output_field.insert('end', 'Pulling files from ' + remote_file + ' for event ' + str(events[i][1]) + '\n')
+                console_output_field["state"] = "disabled"
+                console_output_field.see("end")
                 for filename in ftp_client.listdir(remote_file):
-                  console_output_field["state"] = "normal"
-                  console_output_field.insert('end', 'Pulling ' + str(filename) + ' from remote server for event ' + str(events[i][1]) + '\n')
-                  console_output_field["state"] = "disabled"
-                  console_output_field.see("end")
                   ftp_client.get(os.path.join(remote_file, filename), os.path.join(event_folder, filename))
                   opened_file = open(os.path.join(event_folder, filename), "r")
                   read_opened_file = opened_file.read()
@@ -412,11 +569,6 @@ def start_gathering_packets_details_functions():
                   else:
                     pattern = re.search(str('"FixtureId":' + " " + events[i][2][0:7]), str(read_opened_file))
                     pattern_str = str('"FixtureId":' + " " + events[i][2][0:7])
-
-                  console_output_field["state"] = "normal"
-                  console_output_field.insert('end', 'Searching for pattern ' + pattern_str + ' in file ' + filename + '\n')
-                  console_output_field["state"] = "disabled"
-                  console_output_field.see("end")
 
                   if pattern != None:
                     print("File " + filename + " has pattern " + pattern_str)
@@ -428,37 +580,33 @@ def start_gathering_packets_details_functions():
                     read_opened_file = opened_file.close()
                     os.rename(os.path.join(event_folder, filename), os.path.join(event_folder, "1_" + filename))
                   else:
-                    console_output_field["state"] = "normal"
-                    console_output_field.insert('end', 'File ' + filename + ' does not have pattern \n')
-                    console_output_field["state"] = "disabled"
-                    console_output_field.see("end")
                     read_opened_file = opened_file.close()
                     os.remove(os.path.join(event_folder, filename))
 
-                if len(events[i][2]) == 7:
-                  lsports_event_packets = f"/mnt/feeds_data/fi_lsports_connector/" + str(events[i][2]) + f"/"
+                if len([int(s) for s in re.findall(r'\b\d+\b', f"{folder}")]) == 0:
+                  continue
                 else:
-                  lsports_event_packets = f"/mnt/feeds_data/fi_lsports_connector/" + str(events[i][2][0:7]) + f"/"
-                
-                for filename in ftp_client.listdir(lsports_event_packets):
+                  digit_folder = f"{folder}"
+
+                for filename in ftp_client.listdir(digit_folder):
                   if os.path.exists(os.path.join(event_folder, filename)):
                     continue
                   else:
                     print(filename)
-                    ftp_client.get(os.path.join(lsports_event_packets, filename), os.path.join(event_folder, filename))
-                    
-              elif supplier_options[idx] == 'SportRadar':
+                    ftp_client.get(os.path.join(remote_file, filename), os.path.join(event_folder, filename))
+                  
+              elif int(idx) == int(1):
                 ssh_client=paramiko.SSHClient()
                 ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                ssh_client.connect(hostname='jump.spectateprod.com', username=username_str, password=password_str)
+                ssh_client.connect(hostname=hostname_str, username=username_str, password=password_str)
                 ftp_client=ssh_client.open_sftp()
                 print("DOWNLOADING " + remote_file)
+                console_output_field["state"] = "normal"
+                console_output_field.insert('end', 'Pulling files from ' + remote_file + ' for event ' + str(events[i][1]) + '\n')
+                console_output_field["state"] = "disabled"
+                console_output_field.see("end")
                 try:
                   for filename in ftp_client.listdir(remote_file):
-                    console_output_field["state"] = "normal"
-                    console_output_field.insert('end', 'Pulling ' + str(filename) + ' from remote server for event ' + str(events[i][1]) + '\n')
-                    console_output_field["state"] = "disabled"
-                    console_output_field.see("end")
                     print(filename)
                     ftp_client.get(os.path.join(remote_file, filename), os.path.join(event_folder, filename))
                 except IOError:
@@ -466,82 +614,83 @@ def start_gathering_packets_details_functions():
               else:
                 ssh_client=paramiko.SSHClient()
                 ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                ssh_client.connect(hostname='jump.spectateprod.com', username=username_str, password=password_str)
+                ssh_client.connect(hostname=hostname_str, username=username_str, password=password_str)
                 console_output_field["state"] = "normal"
-                console_output_field.insert('end', 'Pulling ' + str(day) + '.tgz' + ' from remote server for event ' + str(events[i][1]) + '\n')
+                console_output_field.insert('end', 'Pulling files from ' + remote_file + ' for event ' + str(events[i][1]) + '\n')
                 console_output_field["state"] = "disabled"
                 console_output_field.see("end")
                 ftp_client=ssh_client.open_sftp()
                 ftp_client.get(remote_file, local_file)
                 ftp_client.close()
 
+            console_output_field["state"] = "normal"
+            console_output_field.insert('end', 'Packets have been pulled for Event ' + str(events[i][1]) + '\n')
+            console_output_field["state"] = "disabled"
+            console_output_field.see("end")
+
+            if int(0) <= int(idx) <= int(1):
+              continue
+            else:
               console_output_field["state"] = "normal"
-              console_output_field.insert('end', 'Packets have been pulled for Event ' + str(events[i][1]) + '\n')
+              console_output_field.insert('end', 'Extracting packets from Zip ' + str(day) + '.tgz' + '\n')
+              console_output_field["state"] = "disabled"
+              console_output_field.see("end")
+              tar = tarfile.open(local_file, "r:gz")
+              files = []
+              for member in tar.getmembers():
+                f = tar.extractfile(member)
+                if f is not None:
+                  content = f.read()
+                  if int(idx) == 8:
+                    if int(events[i][2][6:8]) >= 10:
+                      #print("Found " + str("raceNumber=" + '"' + events[i][2][6:8] + '"'))
+                      pattern = re.search(str("raceNumber=" + '"' + events[i][2][6:8] + '"'), str(content))
+                      pattern_str = str("raceNumber=" + '"' + events[i][2][6:8] + '"')
+                    else:
+                      print("Found " + str("raceNumber=" + '"' + events[i][2][7:8] + '"'))
+                      pattern = re.search(str("raceNumber=" + '"' + events[i][2][7:8] + '"'), str(content))
+                      pattern_str = str("raceNumber=" + '"' + events[i][2][7:8] + '"')
+                  else:
+                    pattern = re.search(str(events[i][2]), str(content))
+                  
+                  if pattern != None:
+                    if int(idx) == 8:
+                      meeting_pattern = re.search(str("meetingId=" + '"' + events[i][2][0:6] + '"'), str(content))
+                      if meeting_pattern != None:
+                        console_output_field["state"] = "normal"
+                        console_output_field.insert('end', "Found " + str("meetingId=" + '"' + events[i][2][0:6] + '"') + '\n')
+                        console_output_field["state"] = "disabled"
+                        console_output_field.see("end")
+                        print("Found " + pattern_str)
+                        files.append(member)
+                        print(member)
+                    else:
+                      files.append(member)
+                      print(member)
+              tar.extractall(path = event_folder, members=files)
+              tar.close()
+
+              console_output_field["state"] = "normal"
+              console_output_field.insert('end', 'Removing folders gathered from remote server \n')
               console_output_field["state"] = "disabled"
               console_output_field.see("end")
 
-              if supplier_options[idx] == 'LSports' or supplier_options[idx] == 'SportRadar':
-                continue
+              if os.path.exists(event_folder + "/" + str(day)):
+                files_list = os.listdir(event_folder + "/" + str(day))
+                print(event_folder)
+                for files in files_list:
+                  print(files)
+                  shutil.move(os.path.join(event_folder + "/" + str(day), files), os.path.join(event_folder, files))
+                os.rmdir(str(event_folder + "/" + str(day)))
+                os.remove(local_file)
+                shutil.rmtree(os.path.abspath(os.path.dirname(__file__)) + '/' + supplier_local_folders[idx][folder_num] + '/')
               else:
-                console_output_field["state"] = "normal"
-                console_output_field.insert('end', 'Extracting packets from Zip ' + str(day) + '.tgz' + '\n')
-                console_output_field["state"] = "disabled"
-                console_output_field.see("end")
-                tar = tarfile.open(local_file, "r:gz")
-                files = []
-                for member in tar.getmembers():
-                  f = tar.extractfile(member)
-                  if f is not None:
-                    content = f.read()
-                    if supplier_options[idx] == 'PAGH - Dogs':
-                      if int(events[i][2][6:8]) >= 10:
-                        #print("Found " + str("raceNumber=" + '"' + events[i][2][6:8] + '"'))
-                        pattern = re.search(str("raceNumber=" + '"' + events[i][2][6:8] + '"'), str(content))
-                        pattern_str = str("raceNumber=" + '"' + events[i][2][6:8] + '"')
-                      else:
-                        print("Found " + str("raceNumber=" + '"' + events[i][2][7:8] + '"'))
-                        pattern = re.search(str("raceNumber=" + '"' + events[i][2][7:8] + '"'), str(content))
-                        pattern_str = str("raceNumber=" + '"' + events[i][2][7:8] + '"')
-                    else:
-                      pattern = re.search(str(events[i][2]), str(content))
-                    #pattern = re.search(str(events[i][2]), str(content))
-                    if pattern != None:
-                      if supplier_options[idx] == 'PAGH - Dogs':
-                        meeting_pattern = re.search(str("meetingId=" + '"' + events[i][2][0:6] + '"'), str(content))
-                        if meeting_pattern != None:
-                          console_output_field["state"] = "normal"
-                          console_output_field.insert('end', "Found " + str("meetingId=" + '"' + events[i][2][0:6] + '"') + '\n')
-                          console_output_field["state"] = "disabled"
-                          console_output_field.see("end")
-                          print("Found " + pattern_str)
-                          files.append(member)
-                          print(member)
-                      else:
-                        files.append(member)
-                        print(member)
-                tar.extractall(path = event_folder, members=files)
-                tar.close()
-
-                console_output_field["state"] = "normal"
-                console_output_field.insert('end', 'Removing folders gathered from remote server \n')
-                console_output_field["state"] = "disabled"
-                console_output_field.see("end")
-
-                if os.path.exists(event_folder + "/" + str(day)):
-                  files_list = os.listdir(event_folder + "/" + str(day))
-                  print(event_folder)
-                  for files in files_list:
-                    print(files)
-                    shutil.move(os.path.join(event_folder + "/" + str(day), files), os.path.join(event_folder, files))
-                  os.rmdir(str(event_folder + "/" + str(day)))
-                  os.remove(local_file)
-                  shutil.rmtree(os.path.abspath(os.path.dirname(__file__)) + '/' + f'{supplier_local_folders[idx][index]}' + '/')
-                else:
-                  print("No Files in Folder Exists")
-                  os.remove(local_file)
-                  shutil.rmtree(os.path.abspath(os.path.dirname(__file__)) + '/' + f'{supplier_local_folders[idx][index]}' + '/')
-
-    if str(events[i][0]) == "13" or str(events[i][0]) == "14":
+                print("No Files in Folder Exists")
+                os.remove(local_file)
+                shutil.rmtree(os.path.abspath(os.path.dirname(__file__)) + '/' + supplier_local_folders[idx][folder_num] + '/')
+    
+    #if str(events[i][0]) == "13" or str(events[i][0]) == "14":
+    if int(13) <= int(events[i][0]) <= int(14):
       print("Looking for packets with StartTimeUtc")
       event_packets = os.listdir(event_folder)
       for packet in event_packets:
@@ -562,7 +711,7 @@ def start_gathering_packets_details_functions():
           read_opened_file = opened_file.close()
           os.rename(os.path.join(event_folder + "/" + packet), os.path.join(event_folder + "/1_" + packet))
     else:
-      print("No Files needed to be renamed")
+      print("No Files needed to be renamed")   
 
     console_output_field["state"] = "normal"
     console_output_field.insert('end', 'Zipped Event folder ' + str(events[i][1]) + '\n')
@@ -576,9 +725,9 @@ def start_gathering_packets_details_functions():
     hours, converted_seconds_int =  converted_seconds_int // 3600, converted_seconds_int % 3600
     minutes, converted_seconds_int = converted_seconds_int // 60, converted_seconds_int % 60
     console_output_field["state"] = "normal"
-    console_output_field.insert('end', 'Packets for Event ' + str(events[i][1]) + ' were gathered in ' + str(hours) + ' Hours ' + str(minutes) + ' Minutes and ' + str(converted_seconds_int) + ' Seconds \n')
+    console_output_field.insert('end', 'Packets for Event ' + str(events[i][1]) + ' were gathered in ' + str(hours) + ' Hours ' + str(minutes) + ' Minute and ' + str(converted_seconds_int) + ' Seconds \n')
     console_output_field["state"] = "disabled"
-    console_output_field.see("end")
+    console_output_field.see("end") 
 
     options["state"] = "normal"
     event_id_input["state"] = "normal"
@@ -587,6 +736,9 @@ def start_gathering_packets_details_functions():
     delete_date_button["state"] = "normal"
     add_event_details["state"] = "normal"
     start_gathering_packets_details["state"] = "normal"
+
+    # Make directories entry for next event
+    supplier_directories.clear()
 
     #After last iteration of array - remove all events and details put into array so other events can be grabbed
     if i == int(events_length_compare - 1):
@@ -598,34 +750,38 @@ def start_gathering_packets_details_functions():
       console_output_field.see("end")
       events.clear()
       event_counter = event_counter - event_counter
-      #print(event_counter)
 
+hostname_label = Label(root, text="Hostname")
+hostname_label.place(x=30,y=50)
+hostname_input = Entry(root, width=50)
+hostname_input.place(x=120, y=50)
+      
 username_label = Label(root, text="Username")
-username_label.place(x=30,y=50)
+username_label.place(x=30,y=80)
 username_input = Entry(root, width=50)
-username_input.place(x=120, y=50)
+username_input.place(x=120, y=80)
 
 password_label = Label(root, text="Password")
-password_label.place(x=30,y=80)
+password_label.place(x=30,y=110)
 password_input = Entry(root, width=50, show="*")
-password_input.place(x=120, y=80)
+password_input.place(x=120, y=110)
 
 search_file_label = Label(root, text="id_rsa File")
-search_file_label.place(x=30,y=110)
+search_file_label.place(x=30,y=140)
 search_file_button = Button(root, text='Browse', command=UploadAction)
-search_file_button.place(x=118, y=110)
+search_file_button.place(x=118, y=140)
 search_file_location = Entry(root, width=42)
-search_file_location.place(x=171, y=113)
+search_file_location.place(x=171, y=143)
 search_file_location["state"] = "disabled"
 
 login_button = Button(root, text="Login", command=login_to_server)
-login_button.place(x=230,y=150)
+login_button.place(x=230,y=180)
 
 chosen_options_value = StringVar(root)
-chosen_options_value.set(supplier_options[2])
+chosen_options_value.set(supplier_options[2].split(" - ", 1)[1])
 
-options = OptionMenu(root, chosen_options_value, *supplier_options, command=date_disabler)
-options.place(x=195,y=270)
+options = OptionMenu(root, chosen_options_value, supplier_options[0].split(" - ", 1)[1], supplier_options[1].split(" - ", 1)[1], supplier_options[2].split(" - ", 1)[1], supplier_options[3].split(" - ", 1)[1], supplier_options[4].split(" - ", 1)[1], supplier_options[5].split(" - ", 1)[1], supplier_options[6].split(" - ", 1)[1], supplier_options[7].split(" - ", 1)[1], supplier_options[8].split(" - ", 1)[1], supplier_options[9].split(" - ", 1)[1], supplier_options[10].split(" - ", 1)[1], supplier_options[11].split(" - ", 1)[1], supplier_options[12].split(" - ", 1)[1], supplier_options[13].split(" - ", 1)[1], supplier_options[14].split(" - ", 1)[1], command=date_disabler)
+options.place(x=195, y=270)
 options["state"] = "disabled"
 
 event_id_label = Label(root, text="Event ID")
