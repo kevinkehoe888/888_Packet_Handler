@@ -413,7 +413,11 @@ def start_gathering_packets_details_functions():
                   if S_ISDIR(mode):
                     starting_directories.append('/' + entry.filename + '/')     
               if chosen_supplier == supplier_options[0].split(' - ')[0]:
-                feed_event_id = events[i][2]
+                if len(events[i][2]) == 10:
+                  feed_event_id = events[i][2][:7]
+                  print(feed_event_id)
+                else:
+                  feed_event_id = events[i][2]
                 #print(feed_event_id)
               else:
                 feed_event_id = events[i][2][-8:]
