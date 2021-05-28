@@ -417,7 +417,11 @@ def start_gathering_packets_details_functions():
                   if S_ISDIR(mode):
                     starting_directories.append('/' + entry.filename + '/')     
               if chosen_supplier == supplier_options[0].split(' - ')[0]:
-                feed_event_id = events[i][2]
+                if len(events[i][2]) == 10:
+                  feed_event_id = events[i][2][:7]
+                  print(feed_event_id)
+                else:
+                  feed_event_id = events[i][2]
                 #print(feed_event_id)
               else:
                 feed_event_id = events[i][2][-8:]
@@ -736,14 +740,6 @@ def start_gathering_packets_details_functions():
     console_output_field["state"] = "disabled"
     console_output_field.see("end") 
 
-    options["state"] = "normal"
-    event_id_input["state"] = "normal"
-    feed_event_id_input["state"] = "normal"
-    add_date_button["state"] = "normal"
-    delete_date_button["state"] = "normal"
-    add_event_details["state"] = "normal"
-    start_gathering_packets_details["state"] = "normal"
-
     # Make directories entry for next event
     supplier_directories.clear()
 
@@ -757,6 +753,14 @@ def start_gathering_packets_details_functions():
       console_output_field.see("end")
       events.clear()
       event_counter = event_counter - event_counter
+
+      options["state"] = "normal"
+      event_id_input["state"] = "normal"
+      feed_event_id_input["state"] = "normal"
+      add_date_button["state"] = "normal"
+      delete_date_button["state"] = "normal"
+      add_event_details["state"] = "normal"
+      start_gathering_packets_details["state"] = "normal"
 
 hostname_label = Label(root, text="Hostname")
 hostname_label.place(x=30,y=50)
