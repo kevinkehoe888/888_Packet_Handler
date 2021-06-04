@@ -13,11 +13,10 @@ import tempfile
 import binascii
 import atexit
 from stat import S_ISDIR, S_ISREG
+import json
 
 # How to build
 # pyinstaller --onefile --hidden-import babel.numbers --windowed 888_Packet_Handler.py
-
-# When current events have been gathered, remove them from array so you dont have to close and reopen script
 
 root = Tk()
 root.title("888 Packet Handler")
@@ -59,19 +58,26 @@ supplier_local_folders= [
   ["BGIN_SC_Packets_from_400", "BGIN_SC_Packets_from_64c"]
 ]
 
+# Hold event information [supplier_id, event_id, feed_event_id, [Dates]]
 events = []
+# Event counter will increment after "Add Event"
 event_counter = 0
 
+#Hold dates for event being added in
 dates = []
+# After adding a date field, this counter will rise by one.
 date_counter = 0
 
+# Hold the date labels uses for current event 
 date_labels = []
+
+# Positioning the Labels
 date_labels_y_pos = 420
 
 starting_directories = [] # To store fist directories found
 temp_directories = [] # Will add new subfolders for each directory
 supplier_directories = [] # This will hold the final directoires for that supplier
-folder_depth = 0
+folder_depth = 0 # Will be incremented by one after every folder check
 
 def login_to_server():
   global hostname_str
@@ -413,7 +419,7 @@ def start_gathering_packets_details_functions():
                   if S_ISDIR(mode):
                     starting_directories.append('/' + entry.filename + '/')     
               if chosen_supplier == supplier_options[0].split(' - ')[0]:
-                if len(events[i][2]) == 10:
+                if len(events[i][2]) > 7:
                   feed_event_id = events[i][2][:7]
                   print(feed_event_id)
                 else:
@@ -718,7 +724,27 @@ def start_gathering_packets_details_functions():
           read_opened_file = opened_file.close()
           os.rename(os.path.join(event_folder + "/" + packet), os.path.join(event_folder + "/1_" + packet))
     else:
-      print("No Files needed to be renamed")   
+      print("No Files needed to be renamed") 
+
+    # Format JSON files
+    event_packets = os.listdir(event_folder)
+    for packet in event_packets:
+      if packet.endswith('.json'):
+        console_output_field["state"] = "normal"
+        console_output_field.insert('end', 'Fromatting JSON file ' + packet + ' to be more readable \n')
+        console_output_field["state"] = "disabled"
+        console_output_field.see("end")
+        data = None
+        with open(os.path.join(event_folder + "/" + packet), 'r') as file:
+            data = file.read().replace('\\', '')
+            data2 = data.replace('"{', '{')
+            data3 = data2.replace('}"', '}')
+        parsed = json.loads(data3)
+        parsed_dump = json.dumps(parsed, indent=4)
+        with open(os.path.join(event_folder + "/" + packet), "r+") as file:
+            file.truncate(0)
+            file.write(parsed_dump)
+            file.close()  
 
     console_output_field["state"] = "normal"
     console_output_field.insert('end', 'Zipped Event folder ' + str(events[i][1]) + '\n')
