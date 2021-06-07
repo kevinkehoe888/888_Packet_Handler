@@ -725,25 +725,43 @@ def start_gathering_packets_details_functions():
     else:
       print("No Files needed to be renamed")
 
-    # Format JSON files
     event_packets = os.listdir(event_folder)
     for packet in event_packets:
       if packet.endswith('.json'):
+        print(packet)
         console_output_field["state"] = "normal"
         console_output_field.insert('end', 'Fromatting JSON file ' + packet + ' to be more readable \n')
         console_output_field["state"] = "disabled"
         console_output_field.see("end")
         data = None
         with open(os.path.join(event_folder + "/" + packet), 'r') as file:
-            data = file.read().replace('\\', '')
-            data2 = data.replace('"{', '{')
-            data3 = data2.replace('}"', '}')
-        parsed = json.loads(data3)
-        parsed_dump = json.dumps(parsed, indent=4)
-        with open(os.path.join(event_folder + "/" + packet), "r+") as file:
-            file.truncate(0)
-            file.write(parsed_dump)
-            file.close()
+          data = file.read().replace('\\', '')
+          data2 = data.replace('"{', '{')
+          data3 = data2.replace('}"', '}')
+          try:
+            parsed = json.loads(data3)
+            parsed_dump = json.dumps(parsed, indent=4)
+            with open(os.path.join(event_folder + "/" + packet), "r+") as file:
+              file.truncate(0)
+              file.write(parsed_dump)
+              file.close()
+          except json.decoder.JSONDecodeError as err:
+            print(f"Invalid JSON: {err}")
+            #console_output_field["state"] = "normal"
+            #console_output_field.insert('end', 'Error in formatting JSON file ' + packet + ' \n')
+            #console_output_field.insert('end', 'Renaming file to 1_ERROR_IN_JSON_' + packet + ' \n')
+            #console_output_field["state"] = "disabled"
+            #console_output_field.see("end")
+            parsed = None
+            parsed_dump = None
+            parsed = json.loads(data)
+            parsed_dump = json.dumps(parsed, indent=4)
+            #os.rename(os.path.join(event_folder + "/" + packet), os.path.join(event_folder + "/1_POTENTIAL_FORMATTING_ERROR_IN_JSON_PLEASE_CHECK_" + packet))
+            with open(os.path.join(event_folder + "/" + packet), "r+") as file:
+              file.truncate(0)
+              file.write(parsed_dump)
+              file.close()
+            continue
 
     console_output_field["state"] = "normal"
     console_output_field.insert('end', 'Zipped Event folder ' + str(events[i][1]) + '\n')
