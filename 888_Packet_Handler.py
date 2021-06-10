@@ -18,8 +18,6 @@ import json
 # How to build
 # pyinstaller --onefile --hidden-import babel.numbers --windowed 888_Packet_Handler.py
 
-# When current events have been gathered, remove them from array so you dont have to close and reopen script
-
 root = Tk()
 root.title("888 Packet Handler")
 root.geometry("1300x750")
@@ -60,28 +58,26 @@ supplier_local_folders= [
   ["BGIN_SC_Packets_from_400", "BGIN_SC_Packets_from_64c"]
 ]
 
+# Hold event information [supplier_id, event_id, feed_event_id, [Dates]]
 events = []
+# Event counter will increment after "Add Event"
 event_counter = 0
 
+#Hold dates for event being added in
 dates = []
+# After adding a date field, this counter will rise by one.
 date_counter = 0
 
+# Hold the date labels uses for current event 
 date_labels = []
+
+# Positioning the Labels
 date_labels_y_pos = 420
 
 starting_directories = [] # To store fist directories found
 temp_directories = [] # Will add new subfolders for each directory
 supplier_directories = [] # This will hold the final directoires for that supplier
-folder_depth = 0
-
-def UploadAction(event=None):
-  if search_file_location["state"] == 'disabled':
-    search_file_location["state"] = "normal"
-    global filename
-    filename = filedialog.askopenfilename()
-    search_file_location.delete(0, "end")
-    search_file_location.insert(END, filename)
-    search_file_location["state"] = "disabled"
+folder_depth = 0 # Will be incremented by one after every folder check
 
 def login_to_server():
   global hostname_str
@@ -96,23 +92,36 @@ def login_to_server():
   hostname_input.delete(0, "end")
   username_input.delete(0, "end")
   password_input.delete(0, "end")
-  search_file_location["state"] = "normal"
-  search_file_location.delete(0, "end")
-  search_file_location["state"] = "disabled"
+  hostname_input["state"] = "disabled"
+  hostname_input.delete(0, "end")
+  username_input["state"] = "disabled"
+  username_input.delete(0, "end")
+  password_input["state"] = "disabled"
+  password_input.delete(0, "end")
+  login_button["state"] = "disabled"
   ssh_client=paramiko.SSHClient()
   ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
   try:
-    try:
-      filename
-    except NameError:
+    authentication = ssh_client.connect(hostname=hostname_str, username=username_str, password=password_str)
+    if authentication is None:
       console_output_field["state"] = "normal"
-      console_output_field.insert('end', 'No ID_RSA file has been linked\n')
+      console_output_field.insert('end', 'Login has been Successful\n')
       console_output_field["state"] = "disabled"
-    else:
-      k = paramiko.RSAKey.from_private_key_file(filename, password=password)
-  except paramiko.ssh_exception.SSHException:
+      username_input["state"] = "disabled"
+      username_input.delete(0, "end")
+      password_input["state"] = "disabled"
+      password_input.delete(0, "end")
+      login_button["state"] = "disabled"
+      options["state"] = "normal"
+      event_id_input["state"] = "normal"
+      feed_event_id_input["state"] = "normal"
+      add_date_button["state"] = "normal"
+      delete_date_button["state"] = "normal"
+      add_event_details["state"] = "normal"
+
+  except paramiko.AuthenticationException:
     console_output_field["state"] = "normal"
-    console_output_field.insert('end', 'Login has been Unuccessful\n')
+    console_output_field.insert('end', 'Login has been Unsuccessful\n')
     console_output_field["state"] = "disabled"
     hostname_input["state"] = "normal"
     hostname_input.delete(0, "end")
@@ -120,34 +129,25 @@ def login_to_server():
     username_input.delete(0, "end")
     password_input["state"] = "normal"
     password_input.delete(0, "end")
-    search_file_button["state"] = "normal"
-    search_file_location.delete(0, "end")
     login_button["state"] = "normal"
+    hostname_str = None
     username_str = None
     password_str = None
-    return
-  authentication = ssh_client.connect(hostname=hostname_str, username=username_str, pkey=k)
-  if authentication is None:
+    
+  except paramiko.ssh_exception.NoValidConnectionsError:
     console_output_field["state"] = "normal"
-    console_output_field.insert('end', 'Login has been Successful\n')
+    console_output_field.insert('end', 'Login has been Unsuccessful\n')
     console_output_field["state"] = "disabled"
-    hostname_input["state"] = "disabled"
+    hostname_input["state"] = "normal"
     hostname_input.delete(0, "end")
-    username_input["state"] = "disabled"
+    username_input["state"] = "normal"
     username_input.delete(0, "end")
-    password_input["state"] = "disabled"
+    password_input["state"] = "normal"
     password_input.delete(0, "end")
-    search_file_button["state"] = "disabled"
-    search_file_location.delete(0, "end")
-    login_button["state"] = "disabled"
-
-    options["state"] = "normal"
-    event_id_input["state"] = "normal"
-    feed_event_id_input["state"] = "normal"
-    add_date_button["state"] = "normal"
-    delete_date_button["state"] = "normal"
-    add_event_details["state"] = "normal"
-    start_gathering_packets_details["state"] = "normal"
+    login_button["state"] = "normal"
+    hostname_str = None
+    username_str = None
+    password_str = None
 
 def date_disabler(value):
   if chosen_options_value.get() == str(supplier_options[0].split(' - ', 1)[1]) or chosen_options_value.get() == str(supplier_options[1].split(' - ', 1)[1]):
@@ -366,6 +366,7 @@ def add_event_details_function():
   for i in range(date_counter):
     delete_date_function()
   #[[supplier_id, event_id, feed_event_id , date1, date2, etc]]
+  start_gathering_packets_details["state"] = "normal"
 
 def start_gathering_packets_details_functions():
   options["state"] = "disabled"
@@ -779,6 +780,15 @@ def start_gathering_packets_details_functions():
     console_output_field["state"] = "disabled"
     console_output_field.see("end") 
 
+    options["state"] = "normal"
+    event_id_input["state"] = "normal"
+    feed_event_id_input["state"] = "normal"
+    chosen_options_value.set(supplier_options[2].split(" - ", 1)[1])
+    add_date_button["state"] = "normal"
+    delete_date_button["state"] = "normal"
+    add_event_details["state"] = "normal"
+    start_gathering_packets_details["state"] = "disabled"
+
     # Make directories entry for next event
     supplier_directories.clear()
 
@@ -792,14 +802,6 @@ def start_gathering_packets_details_functions():
       console_output_field.see("end")
       events.clear()
       event_counter = event_counter - event_counter
-
-      options["state"] = "normal"
-      event_id_input["state"] = "normal"
-      feed_event_id_input["state"] = "normal"
-      add_date_button["state"] = "normal"
-      delete_date_button["state"] = "normal"
-      add_event_details["state"] = "normal"
-      start_gathering_packets_details["state"] = "normal"
 
 hostname_label = Label(root, text="Hostname")
 hostname_label.place(x=30,y=50)
@@ -816,16 +818,8 @@ password_label.place(x=30,y=110)
 password_input = Entry(root, width=50, show="*")
 password_input.place(x=120, y=110)
 
-search_file_label = Label(root, text="id_rsa File")
-search_file_label.place(x=30,y=140)
-search_file_button = Button(root, text='Browse', command=UploadAction)
-search_file_button.place(x=118, y=140)
-search_file_location = Entry(root, width=42)
-search_file_location.place(x=171, y=143)
-search_file_location["state"] = "disabled"
-
 login_button = Button(root, text="Login", command=login_to_server)
-login_button.place(x=230,y=180)
+login_button.place(x=230,y=150)
 
 chosen_options_value = StringVar(root)
 chosen_options_value.set(supplier_options[2].split(" - ", 1)[1])
