@@ -3,7 +3,7 @@ from tkinter import filedialog
 from tkcalendar import DateEntry
 import paramiko
 import time
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 import os
 import tarfile
 import re
@@ -64,15 +64,18 @@ events = []
 event_counter = 0
 
 #Hold dates for event being added in
-dates = []
+dates = {}
+#dates = []
 # After adding a date field, this counter will rise by one.
 date_counter = 0
 
 # Hold the date labels uses for current event 
-date_labels = []
+date_labels = {}
+#date_labels = []
 
 # Positioning the Labels
-date_labels_y_pos = 420
+#date_labels_y_pos = 420
+date_labels_y_pos = 0
 
 starting_directories = [] # To store fist directories found
 temp_directories = [] # Will add new subfolders for each directory
@@ -116,7 +119,6 @@ def login_to_server():
       event_id_input["state"] = "normal"
       feed_event_id_input["state"] = "normal"
       add_date_button["state"] = "normal"
-      delete_date_button["state"] = "normal"
       add_event_details["state"] = "normal"
 
   except paramiko.AuthenticationException:
@@ -153,37 +155,60 @@ def date_disabler(value):
   if chosen_options_value.get() == str(supplier_options[0].split(' - ', 1)[1]) or chosen_options_value.get() == str(supplier_options[1].split(' - ', 1)[1]):
     add_date_button["state"] = "disabled"
     delete_date_button["state"] = "disabled"
+    for i in range(date_counter):
+      delete_date_function()
   else:
     add_date_button["state"] = "normal"
-    delete_date_button["state"] = "normal"
+    for i in range(date_counter):
+      delete_date_function()
 
 def add_date_function():
   global date_counter
   global date_labels_y_pos
-  date_labels.append(Label(root, text="Date #" + str(date_counter + 1)))
-  date_labels[date_counter].place(x=160, y=date_labels_y_pos)
-  dates.append(DateEntry(root, values=date_counter, year=2021, state="readonly", date_pattern="yyyy-mm-dd"))
-  dates[date_counter].place(x=220,y=date_labels_y_pos)
-  date_labels_y_pos = date_labels_y_pos + 30
+  #date_labels.append(Label(root, text="Date #" + str(date_counter + 1)))
+  #date_labels[date_counter].place(x=160, y=date_labels_y_pos)
+  #dates.append(DateEntry(root, values=date_counter, year=2021, state="readonly", date_pattern="yyyy-mm-dd"))
+  #dates[date_counter].place(x=220,y=date_labels_y_pos)
+  #date_labels_y_pos = date_labels_y_pos + 30
+  #date_counter = date_counter + 1
+  date_labels["date_label{0}".format(date_counter)] = Label(date_frame, text="Date #" + str(date_counter + 1))
+  date_labels["date_label{0}".format(date_counter)].grid(column=0, row=date_labels_y_pos, sticky=W, padx=(120,10), pady=5)
+  dates["date_{0}".format(date_counter)] = DateEntry(date_frame, values=date_counter, year=2021, state="readonly", date_pattern="yyyy-mm-dd")
+  dates["date_{0}".format(date_counter)].grid(column=1, row=date_labels_y_pos, sticky=E, pady=5)#pady=(0, 5))
+  #dates["date_{0}".format(date_counter)].place(x=220,y=date_labels_y_pos)
+  #date_labels_y_pos = date_labels_y_pos + 30
+  date_labels_y_pos = date_labels_y_pos + 1
   date_counter = date_counter + 1
   console_output_field["state"] = "normal"
   console_output_field.insert('end', 'Adding Date Field ' + str(date_counter) + ' \n')
   console_output_field["state"] = "disabled"
   console_output_field.see("end")
+  date_canvas.update_idletasks()
+  date_canvas.configure(scrollregion=date_canvas.bbox('all'), yscrollcommand=date_canvas_scroll_y.set)
+  if delete_date_button["state"] == "disabled":
+    delete_date_button["state"] = "normal"
 
 def delete_date_function():
   global date_counter
   global date_labels_y_pos
-  date_labels[date_counter - 1].destroy()
-  dates[date_counter - 1].destroy()
-  del date_labels[date_counter - 1]
-  del dates[date_counter - 1]
+  #date_labels[date_counter - 1].destroy()
+  #dates[date_counter - 1].destroy()
+  date_labels["date_label{0}".format(date_counter - 1)].destroy()
+  dates["date_{0}".format(date_counter - 1)].destroy()
+  #del date_labels[date_counter - 1]
+  #del dates[date_counter - 1]
   console_output_field["state"] = "normal"
   console_output_field.insert('end', 'Removing Date Field ' + str(date_counter) + ' \n')
   console_output_field["state"] = "disabled"
   console_output_field.see("end")
-  date_labels_y_pos = date_labels_y_pos - 30
+  #date_labels_y_pos = date_labels_y_pos - 30
+  date_labels_y_pos = date_labels_y_pos - 1
   date_counter = date_counter - 1
+  date_canvas.update_idletasks()
+  date_canvas.configure(scrollregion=date_canvas.bbox('all'), yscrollcommand=date_canvas_scroll_y.set)
+  print(date_counter)
+  if delete_date_button["state"] == "normal" and date_counter == 0:
+    delete_date_button["state"] = "disabled"
 
 def add_event_details_function():
   global event_counter
@@ -244,20 +269,18 @@ def add_event_details_function():
   #if int(events[event_counter][0]) == supplier_options.index('LSports') and not dates: 
   if int(events[event_counter][0]) == int(supplier) and not dates: 
     events[event_counter].append('00000000')
-  #elif int(events[event_counter][0]) == supplier_options.index('SportRadar') and not dates:
-  elif int(events[event_counter][0]) == int(supplier) and not dates:
-    events[event_counter].append('00000000')
 
   #Adds all the event into the array and sets counter up for next one
   dates_string = ""
   yesterday = int(datetime.strftime(datetime.now() - timedelta(1), '%Y%m%d'))
-  for i in dates:
+  #for i in dates:
+  for idx, val in enumerate(dates):
     if int(events[event_counter][0]) == 2 or 6 or 7 or 8 or range(11,14):#supplier_options.index('Metric Gaming') or int(events[event_counter][0]) == supplier_options.index('CMT') or int(events[event_counter][0]) == supplier_options.index('PA - Press Association') or int(events[event_counter][0]) == supplier_options.index('PAGH - Dogs') or int(events[event_counter][0]) == supplier_options.index('SSOL - Sporting Solutions') or int(events[event_counter][0]) == supplier_options.index('SSOLIN - Sporting Solutions InPlay') or int(events[event_counter][0]) == supplier_options.index('BGIN - BetGenius') or int(events[event_counter][0]) == supplier_options.index('BGIN_SC - BetGenius_SC'):
-      date = str(i.get_date()).translate({ord('-'):None})
+      date = str(dates[val].get_date()).translate({ord('-'):None})
       if int(date) >= 20200429 and int(date) <= yesterday:
         print("Date for supplier " + str(supplier_options[int(supplier)].split(" - ", 1)[1]) + " is " + date)
-        events[event_counter].append(str(i.get_date()).translate({ord('-'):None}))
-        dates_string = dates_string + str(i.get_date()) + " "
+        events[event_counter].append(str(dates[val].get_date()).translate({ord('-'):None}))
+        dates_string = dates_string + str(dates[val].get_date()) + " "
       else:
         console_output_field["state"] = "normal"
         console_output_field.insert('end', "Date " + date + " is not in in range for " + str(supplier_options[int(supplier)].split(" - ", 1)[1]) + ' \n')
@@ -271,11 +294,11 @@ def add_event_details_function():
         print(event_counter)
         return
     elif int(events[event_counter][0]) == 3: #supplier_options.index('At The Races'):
-      date = str(i.get_date()).translate({ord('-'):None})
+      date = str(dates[val].get_date()).translate({ord('-'):None})
       if int(date) >= 20200902 and int(date) <= 20210131:
         print("Date for supplier " + str(supplier_options[int(supplier)].split(" - ", 1)[1]) + " is " + date)
-        events[event_counter].append(str(i.get_date()).translate({ord('-'):None}))
-        dates_string = dates_string + str(i.get_date()) + " "
+        events[event_counter].append(str(dates[val].get_date()).translate({ord('-'):None}))
+        dates_string = dates_string + str(dates[val].get_date()) + " "
       else:
         console_output_field["state"] = "normal"
         console_output_field.insert('end', "Date " + date + " is not in in range for " + str(supplier_options[int(supplier)].split(" - ", 1)[1]) + ' \n')
@@ -289,11 +312,11 @@ def add_event_details_function():
         return
 
     elif int(events[event_counter][0]) == 3 or 4: # supplier_options.index('Racing UK') or int(events[event_counter][0]) == supplier_options.index('SIS - SPIN Horse Racing'):
-      date = str(i.get_date()).translate({ord('-'):None})
+      date = str(dates[val].get_date()).translate({ord('-'):None})
       if int(date) >= 20201208 and int(date) <= 20210131:
         print("Date for supplier " + str(supplier_options[int(supplier)].split(" - ", 1)[1]) + " is " + date)
-        events[event_counter].append(str(i.get_date()).translate({ord('-'):None}))
-        dates_string = dates_string + str(i.get_date()) + " "
+        events[event_counter].append(str(dates[val].get_date()).translate({ord('-'):None}))
+        dates_string = dates_string + str(dates[val].get_date()) + " "
       else:
         console_output_field["state"] = "normal"
         console_output_field.insert('end', "Date " + date + " is not in in range for " + str(supplier_options[int(supplier)].split(" - ", 1)[1]) + ' \n')
@@ -307,11 +330,11 @@ def add_event_details_function():
         return
     
     elif int(events[event_counter][0]) == 9:#supplier_options.index('BR - BetRadar'):
-      date = str(i.get_date()).translate({ord('-'):None})
+      date = str(dates[val].get_date()).translate({ord('-'):None})
       if int(date) >= 20200817 and int(date) <= 20201031:
         print("Date for supplier " + str(supplier_options[int(supplier)].split(" - ", 1)[1]) + " is " + date)
-        events[event_counter].append(str(i.get_date()).translate({ord('-'):None}))
-        dates_string = dates_string + str(i.get_date()) + " "
+        events[event_counter].append(str(dates[val].get_date()).translate({ord('-'):None}))
+        dates_string = dates_string + str(dates[val].get_date()) + " "
       else:
         console_output_field["state"] = "normal"
         console_output_field.insert('end', "Date " + date + " is not in in range for " + str(supplier_options[int(supplier)].split(" - ", 1)[1]) + ' \n')
@@ -325,11 +348,11 @@ def add_event_details_function():
         return
     
     elif int(events[event_counter][0]) == 10:#supplier_options.index('BRIN - BetRadar Inplay'):
-      date = str(i.get_date()).translate({ord('-'):None})
+      date = str(dates[val].get_date()).translate({ord('-'):None})
       if int(date) >= 20200817 and int(date) <= 20201130:
         print("Date for supplier " + str(supplier_options[int(supplier)].split(" - ", 1)[1]) + " is " + date)
-        events[event_counter].append(str(i.get_date()).translate({ord('-'):None}))
-        dates_string = dates_string + str(i.get_date()) + " "
+        events[event_counter].append(str(dates[val].get_date()).translate({ord('-'):None}))
+        dates_string = dates_string + str(dates[val].get_date()) + " "
       else:
         console_output_field["state"] = "normal"
         console_output_field.insert('end', "Date " + date + " is not in in range for " + str(supplier_options[int(supplier)].split(" - ", 1)[1]) + ' \n')
@@ -748,11 +771,6 @@ def start_gathering_packets_details_functions():
               file.close()
           except json.decoder.JSONDecodeError as err:
             print(f"Invalid JSON: {err}")
-            #console_output_field["state"] = "normal"
-            #console_output_field.insert('end', 'Error in formatting JSON file ' + packet + ' \n')
-            #console_output_field.insert('end', 'Renaming file to 1_ERROR_IN_JSON_' + packet + ' \n')
-            #console_output_field["state"] = "disabled"
-            #console_output_field.see("end")
             parsed = None
             parsed_dump = None
             parsed = json.loads(data)
@@ -870,5 +888,20 @@ console_output_field.config(height = 40)
 
 yscrollbar.place(in_=console_output_field, relx=1.0, relheight=1.0, bordermode="outside")
 yscrollbar.config(command=console_output_field.yview)
+
+#Scrollable Date Sections
+date_canvas = Canvas(root, width=450, height = 200)
+date_canvas_scroll_y = Scrollbar(root, orient="vertical", command=date_canvas.yview)
+date_frame = Frame(date_canvas)
+
+# put the frame in the canvas
+date_canvas.create_window(0, 0, anchor='nw', window=date_frame)
+# make sure everything is displayed before configuring the scrollregion
+date_canvas.update_idletasks()
+date_canvas.configure(scrollregion=date_canvas.bbox('all'), yscrollcommand=date_canvas_scroll_y.set)            
+date_canvas.pack(fill='both', side='left')
+date_canvas_scroll_y.pack(fill='y', side='right')
+date_canvas_scroll_y.place(in_=date_canvas, relx=1.0, relheight=1.0, bordermode="outside")
+date_canvas.place(x=50, y=430)
 
 root.mainloop()
