@@ -185,6 +185,7 @@ def add_date_function():
   console_output_field.see("end")
   date_canvas.update_idletasks()
   date_canvas.configure(scrollregion=date_canvas.bbox('all'), yscrollcommand=date_canvas_scroll_y.set)
+  date_canvas.yview_moveto(1)
   if delete_date_button["state"] == "disabled":
     delete_date_button["state"] = "normal"
 
