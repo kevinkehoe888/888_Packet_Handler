@@ -23,21 +23,21 @@ root.title("888 Packet Handler")
 root.geometry("1300x750")
 
 supplier_options = [
-"lsport - LSports",
-"sportradar - SportRadar",
-"METRIC - Metric Gaming",
-"AT_THE_RACES - At The Races",
-"RACING_UK - Racing UK",
-"SIS - SPIN Horse Racing",
-"CMT - CMT",
-"PA - Press Association",
-"PAGH - Dogs",
-"BR - BetRadar",
-"BRIN - BetRadar Inplay",
-"SSOL - Sporting Solutions",
-"SSOLIN - Sporting Solutions InPlay",
-"BGIN - BetGenius",
-"BGIN_SC - BetGenius_SC"
+  "lsport - LSports",
+  "sportradar - SportRadar",
+  "METRIC - Metric Gaming",
+  "AT_THE_RACES - At The Races",
+  "RACING_UK - Racing UK",
+  "SIS - SPIN Horse Racing",
+  "CMT - CMT",
+  "PA - Press Association",
+  "PAGH - Dogs",
+  "BR - BetRadar",
+  "BRIN - BetRadar Inplay",
+  "SSOL - Sporting Solutions",
+  "SSOLIN - Sporting Solutions InPlay",
+  "BGIN - BetGenius",
+  "BGIN_SC - BetGenius_SC"
 ]
 
 supplier_local_folders= [
@@ -60,24 +60,23 @@ supplier_local_folders= [
 
 # Hold event information [supplier_id, event_id, feed_event_id, [Dates]]
 events = []
+
 # Event counter will increment after "Add Event"
 event_counter = 0
 
 #Hold dates for event being added in
 dates = {}
-#dates = []
+
 # After adding a date field, this counter will rise by one.
 date_counter = 0
 
 # Hold the date labels uses for current event 
 date_labels = {}
-#date_labels = []
 
-# Positioning the Labels
-#date_labels_y_pos = 420
+# Positioning the Date Labels inside the date_canvas and date_frame
 date_labels_y_pos = 0
 
-starting_directories = [] # To store fist directories found
+starting_directories = [] # To store first directories found
 temp_directories = [] # Will add new subfolders for each directory
 supplier_directories = [] # This will hold the final directoires for that supplier
 folder_depth = 0 # Will be incremented by one after every folder check
@@ -165,24 +164,17 @@ def date_disabler(value):
 def add_date_function():
   global date_counter
   global date_labels_y_pos
-  #date_labels.append(Label(root, text="Date #" + str(date_counter + 1)))
-  #date_labels[date_counter].place(x=160, y=date_labels_y_pos)
-  #dates.append(DateEntry(root, values=date_counter, year=2021, state="readonly", date_pattern="yyyy-mm-dd"))
-  #dates[date_counter].place(x=220,y=date_labels_y_pos)
-  #date_labels_y_pos = date_labels_y_pos + 30
-  #date_counter = date_counter + 1
   date_labels["date_label{0}".format(date_counter)] = Label(date_frame, text="Date #" + str(date_counter + 1))
   date_labels["date_label{0}".format(date_counter)].grid(column=0, row=date_labels_y_pos, sticky=W, padx=(120,10), pady=5)
   dates["date_{0}".format(date_counter)] = DateEntry(date_frame, values=date_counter, year=2021, state="readonly", date_pattern="yyyy-mm-dd")
-  dates["date_{0}".format(date_counter)].grid(column=1, row=date_labels_y_pos, sticky=E, pady=5)#pady=(0, 5))
-  #dates["date_{0}".format(date_counter)].place(x=220,y=date_labels_y_pos)
-  #date_labels_y_pos = date_labels_y_pos + 30
+  dates["date_{0}".format(date_counter)].grid(column=1, row=date_labels_y_pos, sticky=E, pady=5)
   date_labels_y_pos = date_labels_y_pos + 1
   date_counter = date_counter + 1
   console_output_field["state"] = "normal"
   console_output_field.insert('end', 'Adding Date Field ' + str(date_counter) + ' \n')
   console_output_field["state"] = "disabled"
   console_output_field.see("end")
+  # Everytime a date is added into the frame the scrollable bar will become active
   date_canvas.update_idletasks()
   date_canvas.configure(scrollregion=date_canvas.bbox('all'), yscrollcommand=date_canvas_scroll_y.set)
   date_canvas.yview_moveto(1)
@@ -192,22 +184,20 @@ def add_date_function():
 def delete_date_function():
   global date_counter
   global date_labels_y_pos
-  #date_labels[date_counter - 1].destroy()
-  #dates[date_counter - 1].destroy()
+  date_label_str="date_label{0}".format(date_counter - 1)
+  dates_str="date_{0}".format(date_counter - 1)
   date_labels["date_label{0}".format(date_counter - 1)].destroy()
   dates["date_{0}".format(date_counter - 1)].destroy()
-  #del date_labels[date_counter - 1]
-  #del dates[date_counter - 1]
+  del date_labels[date_label_str]
+  del dates[dates_str]
   console_output_field["state"] = "normal"
   console_output_field.insert('end', 'Removing Date Field ' + str(date_counter) + ' \n')
   console_output_field["state"] = "disabled"
   console_output_field.see("end")
-  #date_labels_y_pos = date_labels_y_pos - 30
   date_labels_y_pos = date_labels_y_pos - 1
   date_counter = date_counter - 1
   date_canvas.update_idletasks()
   date_canvas.configure(scrollregion=date_canvas.bbox('all'), yscrollcommand=date_canvas_scroll_y.set)
-  print(date_counter)
   if delete_date_button["state"] == "normal" and date_counter == 0:
     delete_date_button["state"] = "disabled"
 
@@ -246,11 +236,6 @@ def add_event_details_function():
     console_output_field["state"] = "disabled"
     console_output_field.see("end")
     return
-  #elif not dates and int(supplier_options.index(chosen_options_value.get())) == 0 and int(supplier_options.index(chosen_options_value.get())) == 1:
-  elif not dates and int(supplier) == 0 and int(supplier) == 1:
-    print("LSports or Sportadars Event")
-    return
-  #elif not dates and int(supplier_options.index(chosen_options_value.get())) in range(2, 14):
   elif not dates and int(supplier) in range(2, 14):
     print("No dates have not been entered")
     console_output_field["state"] = "normal"
@@ -276,7 +261,7 @@ def add_event_details_function():
   yesterday = int(datetime.strftime(datetime.now() - timedelta(1), '%Y%m%d'))
   #for i in dates:
   for idx, val in enumerate(dates):
-    if int(events[event_counter][0]) == 2 or 6 or 7 or 8 or range(11,14):#supplier_options.index('Metric Gaming') or int(events[event_counter][0]) == supplier_options.index('CMT') or int(events[event_counter][0]) == supplier_options.index('PA - Press Association') or int(events[event_counter][0]) == supplier_options.index('PAGH - Dogs') or int(events[event_counter][0]) == supplier_options.index('SSOL - Sporting Solutions') or int(events[event_counter][0]) == supplier_options.index('SSOLIN - Sporting Solutions InPlay') or int(events[event_counter][0]) == supplier_options.index('BGIN - BetGenius') or int(events[event_counter][0]) == supplier_options.index('BGIN_SC - BetGenius_SC'):
+    if int(events[event_counter][0]) == 2 or 6 or 7 or 8 or range(11,14):
       date = str(dates[val].get_date()).translate({ord('-'):None})
       if int(date) >= 20200429 and int(date) <= yesterday:
         print("Date for supplier " + str(supplier_options[int(supplier)].split(" - ", 1)[1]) + " is " + date)
@@ -294,7 +279,7 @@ def add_event_details_function():
         console_output_field.see("end")
         print(event_counter)
         return
-    elif int(events[event_counter][0]) == 3: #supplier_options.index('At The Races'):
+    elif int(events[event_counter][0]) == 3:
       date = str(dates[val].get_date()).translate({ord('-'):None})
       if int(date) >= 20200902 and int(date) <= 20210131:
         print("Date for supplier " + str(supplier_options[int(supplier)].split(" - ", 1)[1]) + " is " + date)
@@ -312,7 +297,7 @@ def add_event_details_function():
         console_output_field.see("end")
         return
 
-    elif int(events[event_counter][0]) == 3 or 4: # supplier_options.index('Racing UK') or int(events[event_counter][0]) == supplier_options.index('SIS - SPIN Horse Racing'):
+    elif int(events[event_counter][0]) == 3 or 4:
       date = str(dates[val].get_date()).translate({ord('-'):None})
       if int(date) >= 20201208 and int(date) <= 20210131:
         print("Date for supplier " + str(supplier_options[int(supplier)].split(" - ", 1)[1]) + " is " + date)
@@ -330,7 +315,7 @@ def add_event_details_function():
         console_output_field.see("end")
         return
     
-    elif int(events[event_counter][0]) == 9:#supplier_options.index('BR - BetRadar'):
+    elif int(events[event_counter][0]) == 9:
       date = str(dates[val].get_date()).translate({ord('-'):None})
       if int(date) >= 20200817 and int(date) <= 20201031:
         print("Date for supplier " + str(supplier_options[int(supplier)].split(" - ", 1)[1]) + " is " + date)
@@ -348,7 +333,7 @@ def add_event_details_function():
         console_output_field.see("end")
         return
     
-    elif int(events[event_counter][0]) == 10:#supplier_options.index('BRIN - BetRadar Inplay'):
+    elif int(events[event_counter][0]) == 10:
       date = str(dates[val].get_date()).translate({ord('-'):None})
       if int(date) >= 20200817 and int(date) <= 20201130:
         print("Date for supplier " + str(supplier_options[int(supplier)].split(" - ", 1)[1]) + " is " + date)
@@ -365,8 +350,6 @@ def add_event_details_function():
         console_output_field["state"] = "disabled"
         console_output_field.see("end")
         return
-    #events[event_counter].append(str(i.get_date()).translate({ord('-'):None}))
-    #dates_string = dates_string + str(i.get_date()) + " "
   dates_string = dates_string + "\n"
 
   console_output_field["state"] = "normal"
@@ -383,7 +366,6 @@ def add_event_details_function():
   event_counter = event_counter + 1
 
   #Resets everything after adding event details
-  #chosen_options_value.set(supplier_options[2])
   chosen_options_value.set(chosen_options_value.get())
   event_id_input.delete(0, "end")
   feed_event_id_input.delete(0, "end")
@@ -680,7 +662,7 @@ def start_gathering_packets_details_functions():
                   content = f.read()
                   if int(idx) == 8:
                     if int(events[i][2][6:8]) >= 10:
-                      #print("Found " + str("raceNumber=" + '"' + events[i][2][6:8] + '"'))
+                      print("Found " + str("raceNumber=" + '"' + events[i][2][6:8] + '"'))
                       pattern = re.search(str("raceNumber=" + '"' + events[i][2][6:8] + '"'), str(content))
                       pattern_str = str("raceNumber=" + '"' + events[i][2][6:8] + '"')
                     else:
@@ -726,7 +708,6 @@ def start_gathering_packets_details_functions():
                 os.remove(local_file)
                 shutil.rmtree(os.path.abspath(os.path.dirname(__file__)) + '/' + supplier_local_folders[idx][folder_num] + '/')
     
-    #if str(events[i][0]) == "13" or str(events[i][0]) == "14":
     if int(13) <= int(events[i][0]) <= int(14):
       print("Looking for packets with StartTimeUtc")
       event_packets = os.listdir(event_folder)
@@ -776,7 +757,6 @@ def start_gathering_packets_details_functions():
             parsed_dump = None
             parsed = json.loads(data)
             parsed_dump = json.dumps(parsed, indent=4)
-            #os.rename(os.path.join(event_folder + "/" + packet), os.path.join(event_folder + "/1_POTENTIAL_FORMATTING_ERROR_IN_JSON_PLEASE_CHECK_" + packet))
             with open(os.path.join(event_folder + "/" + packet), "r+") as file:
               file.truncate(0)
               file.write(parsed_dump)
