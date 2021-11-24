@@ -1,5 +1,6 @@
 from tkinter import *
 from tkinter import filedialog
+from tkinter.ttk import Progressbar
 from tkcalendar import DateEntry
 import paramiko
 import time
@@ -40,24 +41,6 @@ supplier_options = [
   "BGIN_SC - BetGenius_SC"
 ]
 
-supplier_local_folders= [
-  ["LSports_Packet_Folder"],
-  ["Sportrader_Packet_Folder"],
-  ["Metric_Packets_from_400", "Metric_Packets_from_64c"],
-  ["ATR_Packets_from_1e5", "ATR_Packets_from_cbe", "ATR_Packets_from_bdc", "ATR_Packets_from_143", "ATR_Packets_from_3fc", "ATR_Packets_from_3c1", "ATR_Packets_from_b48", "ATR_Packets_from_bf6"],
-  ["RUK_Packets_from_1e5", "RUK_Packets_from_cbe", "RUK_Packets_from_bdc", "RUK_Packets_from_143", "RUK_Packets_from_3fc", "RUK_Packets_from_3c1", "RUK_Packets_from_b48", "RUK_Packets_from_bf6"],
-  ["SIS_Packets_from_1e5", "SIS_Packets_from_cbe", "SIS_Packets_from_bdc", "SIS_Packets_from_143", "SIS_Packets_from_3fc", "SIS_Packets_from_3c1", "SIS_Packets_from_bf6"],
-  ["CMT_Packets_from_cbe"],
-  ["PA_Packets_from_bdc"],
-  ["PAGH_Packets_from_bf6"],
-  ["BR_Packets_from_3c1"],
-  ["BRIN_Packets_from_3c1"],
-  ["SSOL_Packets_from_1e5"],
-  ["SSOLIN_Packets_from_1e5"],
-  ["BGIN_Packets_from_400", "BGIN_Packets_from_64c"],
-  ["BGIN_SC_Packets_from_400", "BGIN_SC_Packets_from_64c"]
-]
-
 # Hold event information [supplier_id, event_id, feed_event_id, json_fornatter_int, [Dates]]
 events = []
 
@@ -81,76 +64,101 @@ temp_directories = [] # Will add new subfolders for each directory
 supplier_directories = [] # This will hold the final directoires for that supplier
 folder_depth = 0 # Will be incremented by one after every folder check
 
+known_host_servers = []
+known_host_optionMenu = []
+
 # Verifys that the user has been able to SSH into the jumpbox before
 def login_to_server():
-  global hostname_str
-  global username_str
-  global password_str
-  hostname = hostname_input.get()
+  global username
+  global password
+  successful_login=0
+
   username = username_input.get()
   password = password_input.get()
-  hostname_str = hostname
-  username_str = username
-  password_str = password
-  hostname_input.delete(0, "end")
   username_input.delete(0, "end")
-  password_input.delete(0, "end")
-  hostname_input["state"] = "disabled"
-  hostname_input.delete(0, "end")
   username_input["state"] = "disabled"
   username_input.delete(0, "end")
+  password_input.delete(0, "end")
   password_input["state"] = "disabled"
   password_input.delete(0, "end")
   login_button["state"] = "disabled"
-  ssh_client=paramiko.SSHClient()
-  ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+  with open(os.path.expanduser('~/.ssh/known_hosts'), 'r') as reader:
+        while (line := reader.readline()):
+            if line.partition(' ')[0].partition(',')[0][0].isalpha() and "jump." in line:
+              if line.partition(' ')[0].partition(',')[0] in known_host_servers:
+                print('Server Exists')
+              else:
+                known_host_servers.append(line.partition(' ')[0].partition(',')[0])
+
+  client = paramiko.SSHClient()
+
   try:
-    authentication = ssh_client.connect(hostname=hostname_str, username=username_str, password=password_str)
-    if authentication is None:
+      client.load_host_keys(filename=os.path.expanduser('~/.ssh/known_hosts'))
+  except:
+      print('File could not be read')
+  else:
+      print('Known host files has been loaded')
+
+  for index, host in enumerate(known_host_servers):
+    try:
+        client.connect(hostname=host, username=username, password=password, key_filename=os.path.expanduser('~/.ssh/id_rsa'))
+    except paramiko.ssh_exception.BadHostKeyException:
+        print('The host key given by the SSH server did not match what we were expecting.')
+        console_output_field["state"] = "normal"
+        console_output_field.insert('end', f'Login for {server} has been unsuccessful. Host key given by the SSH Server does not match\n')
+        console_output_field["state"] = "disabled"
+        username_input["state"] = "normal"
+        username_input.delete(0, "end")
+        login_button["state"] = "normal"
+    except paramiko.ssh_exception.AuthenticationException:
+        server = host[13:]
+        server = server[:-4].upper()
+        print('Authentication failed for some reason')
+        console_output_field["state"] = "normal"
+        console_output_field.insert('end', f'Login for {server} has been unsuccessful for some reason\n')
+        console_output_field["state"] = "disabled"
+        username_input["state"] = "normal"
+        username_input.delete(0, "end")
+        login_button["state"] = "normal"
+    else:
+        print('Connection to server has been successful')
+        client.close()
+        successful_login = successful_login + 1
+        server = host[13:]
+        server = server[:-4].upper()
+        known_host_servers[index] = f'{known_host_servers[index]} - {server}'
+        known_host_optionMenu.append(f'{server}')
+    
+    if successful_login == len(known_host_servers):
+      global chosen_options_value
+      global options
+      global chosen_server_value
+      global server_options
       console_output_field["state"] = "normal"
-      console_output_field.insert('end', 'Login has been Successful\n')
+      console_output_field.insert('end', 'Login to server(s) has been Successful\n')
       console_output_field["state"] = "disabled"
       username_input["state"] = "disabled"
       username_input.delete(0, "end")
-      password_input["state"] = "disabled"
-      password_input.delete(0, "end")
       login_button["state"] = "disabled"
-      options["state"] = "normal"
       event_id_input["state"] = "normal"
       feed_event_id_input["state"] = "normal"
       add_date_button["state"] = "normal"
       add_event_details["state"] = "normal"
       format_json_button["state"] = "normal"
+      
+      #Loading Supplier Dropdown
+      chosen_options_value = StringVar(root)
+      chosen_options_value.set(supplier_options[2].split(" - ", 1)[1])
+      options = OptionMenu(root, chosen_options_value, supplier_options[0].split(" - ", 1)[1], supplier_options[1].split(" - ", 1)[1], supplier_options[2].split(" - ", 1)[1], supplier_options[3].split(" - ", 1)[1], supplier_options[4].split(" - ", 1)[1], supplier_options[5].split(" - ", 1)[1], supplier_options[6].split(" - ", 1)[1], supplier_options[7].split(" - ", 1)[1], supplier_options[8].split(" - ", 1)[1], supplier_options[9].split(" - ", 1)[1], supplier_options[10].split(" - ", 1)[1], supplier_options[11].split(" - ", 1)[1], supplier_options[12].split(" - ", 1)[1], supplier_options[13].split(" - ", 1)[1], supplier_options[14].split(" - ", 1)[1], command=date_disabler)
+      options.place(x=115, y=270)
 
-  except paramiko.AuthenticationException:
-    console_output_field["state"] = "normal"
-    console_output_field.insert('end', 'Login has been Unsuccessful\n')
-    console_output_field["state"] = "disabled"
-    hostname_input["state"] = "normal"
-    hostname_input.delete(0, "end")
-    username_input["state"] = "normal"
-    username_input.delete(0, "end")
-    password_input["state"] = "normal"
-    password_input.delete(0, "end")
-    login_button["state"] = "normal"
-    hostname_str = None
-    username_str = None
-    password_str = None
-    
-  except paramiko.ssh_exception.NoValidConnectionsError:
-    console_output_field["state"] = "normal"
-    console_output_field.insert('end', 'Login has been Unsuccessful\n')
-    console_output_field["state"] = "disabled"
-    hostname_input["state"] = "normal"
-    hostname_input.delete(0, "end")
-    username_input["state"] = "normal"
-    username_input.delete(0, "end")
-    password_input["state"] = "normal"
-    password_input.delete(0, "end")
-    login_button["state"] = "normal"
-    hostname_str = None
-    username_str = None
-    password_str = None
+      # Loading Server Dropdown
+      chosen_server_value = StringVar(root)
+      chosen_server_value.set(known_host_servers[0].split(" - ", 1)[1])
+      server_options = OptionMenu(root, chosen_server_value, *known_host_optionMenu)
+      server_options.place(x=350, y=270)
+
 
 # This functon will act when the supplier has been changed or an event has been added.
 # The checkbox will be deselected and the IntVar will be reset to 0
@@ -163,7 +171,7 @@ def json_format_unselector():
   else:
     print("Button Already Deselected")
 
-# Tis will disabled the date based on suppier but will also disabled the JSON formatter for BG events
+# This will disabled the date based on suppier but will also disabled the JSON formatter for BG events
 def date_disabler(value):
   # Disables dates being inputted by the user for LSports and Sportradar events.
   if chosen_options_value.get() == str(supplier_options[0].split(' - ', 1)[1]) or chosen_options_value.get() == str(supplier_options[1].split(' - ', 1)[1]):
@@ -230,6 +238,7 @@ def add_event_details_function():
   global event_counter
   global date_counter
   global chosen_options_value
+  global chosen_server_value
 
   supplier = chosen_options_value.get()
   # checks the supplier options and makes sure that our supplier field will have the same index value as our supplier_options would have
@@ -242,10 +251,22 @@ def add_event_details_function():
         print(supplier)
       else:
         continue
+
   # Grab values for event_id, feed_event_id and our json IntVar value
   eventid = event_id_input.get()
   feedeventid = feed_event_id_input.get()
   formatjson = format_json_int.get()
+
+  servername = chosen_server_value.get()
+  for i in known_host_servers:
+    if servername in i:
+      servername = str(i.split(" - ", 1)[0])
+      print(servername)
+      if len(servername) == len(i):
+        servername = str(i.split(" - ", 1)[0])
+        print(servername)
+      else:
+        continue
 
   # If the event_id, feed_event_id or no dates have been entered. The program will prompt you of this
   if not eventid:
@@ -278,6 +299,7 @@ def add_event_details_function():
   events[event_counter].append(eventid)
   events[event_counter].append(feedeventid)
   events[event_counter].append(formatjson)
+  events[event_counter].append(servername)
 
   # This checks if the supplier is LSports or Sportsradar. To make sure the function dosnt error a date of 00-00-0000 will be added but is never used.
   if int(events[event_counter][0]) == int(supplier) and not dates: 
@@ -288,6 +310,7 @@ def add_event_details_function():
   dates_string = ""
   # Grabs yesterdays date and converts it to an int so we can check all dates for the event.
   yesterday = int(datetime.strftime(datetime.now() - timedelta(1), '%Y%m%d'))
+  print(events[event_counter])
 
   # This for loop will check every date enetered and check which supplier the event has.
   # Based on this informaiton the loop will check every date to make sure each date can be searched in the jumpbox.
@@ -417,6 +440,13 @@ def add_event_details_function():
 # 5. After these files have been extracted into our Packets_for_Event_xxxxxx folder, it will try to format the JSON files if the option is selected
 # OR it will rename some Betgenius files based on the StartTimeUtc on the file.
 def start_gathering_packets_details_functions():
+  def step():
+      progress.start(10)
+  step()
+
+  global chosen_supplier_folder_name
+  chosen_supplier_folder_name = ''
+
   options["state"] = "disabled"
   event_id_input["state"] = "disabled"
   feed_event_id_input["state"] = "disabled"
@@ -425,6 +455,7 @@ def start_gathering_packets_details_functions():
   add_event_details["state"] = "disabled"
   start_gathering_packets_details["state"] = "disabled"
   format_json_button["state"] = "disabled"
+  server_options["state"] = "disabled"
   number_of_events = range(len(events))
   events_length_compare = len(events)
 
@@ -447,15 +478,24 @@ def start_gathering_packets_details_functions():
     console_output_field["state"] = "disabled"
     console_output_field.see("end")
     supplier_directories.clear()
+    server_name = ''
     # Grabs the current time
     start = time.time()
+
+    # Grabs the server value and is refenced by the val variable
+    for index, val in enumerate(known_host_servers):
+      print(index, val)
+      print(val.split(' - ')[1])
+      if(val.split(' - ')[0] == events[i][4]):
+        server_name = server_name + val.split(' - ')[1]
+        print('FOUND SERVER NAME ' + server_name)
 
     # Breaks down each date for the event and converts them into year, month and day since the folder structures are in the same format.
     for j in number_of_dates:
       year = events[i][j][0:4]
       month = events[i][j][4:6]
       day = events[i][j][6:8]
-
+  
       # Grabs the supplier value and is refenced by the val variable
       for idx, val in enumerate(supplier_options):
         if int(events[i][0]) == idx:
@@ -463,15 +503,15 @@ def start_gathering_packets_details_functions():
           console_output_field["state"] = "normal"
           console_output_field.insert('end', 'Searching for folders this will take some time.\n')
           console_output_field["state"] = "disabled"
-
           # This function will start to get the directories needed for this supplier.
           def get_directory():
+            global chosen_supplier_folder_name
             global folder_depth
             global starting_directories
             chosen_supplier = val
             ssh_client=paramiko.SSHClient()
-            ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            ssh_client.connect(hostname=hostname_str, username=username_str, password=password_str)
+            ssh_client.load_host_keys(filename=os.path.expanduser('~/.ssh/known_hosts'))
+            ssh_client.connect(hostname=str(events[i][4]), username=username, password=password, key_filename=os.path.expanduser('~/.ssh/id_rsa'))
             ftp_client=ssh_client.open_sftp()
 
             # Checking if the Supplier is LSports or Sportsradar and finding the folders for these suppliers
@@ -613,11 +653,15 @@ def start_gathering_packets_details_functions():
               starting_directories.clear()
               starting_directories = starting_directories + temp_directories
               temp_directories.clear()
+              ssh_client.close()
               get_directory()
             else:
               starting_directories.clear()
               temp_directories.clear()
               folder_depth = 0
+              ssh_client.close()
+              print(supplier_directories)
+              chosen_supplier_folder_name = chosen_supplier.split(' - ', 1)[0] + '_Packets_from_' + server_name
           
           get_directory()
 
@@ -627,6 +671,7 @@ def start_gathering_packets_details_functions():
           
           # With the folders found for the supplier, this for loop will work on creating the folders to find the remote file(s) needed.
           for folder_num, folder in enumerate(supplier_directories):
+            chosen_supplier = chosen_supplier_folder_name
             print("Checking directories")
             # If the supplier is LSports or Sportsradar this if statement will run. This if statement will assign the remote and local folders with the values needed.
             if int(0) <= int(idx) <= int(1):
@@ -642,8 +687,8 @@ def start_gathering_packets_details_functions():
             elif int(2) <= int(idx) <= int(14):
               print("Supplier is " + supplier_options[idx])
               remote_file = f"{folder}{year}/{month}/{day}.tgz"
-              folder_dir = os.path.abspath(os.path.dirname(__file__)) + '/' + supplier_local_folders[idx][folder_num] + f'/{year}/{month}/'
-              local_file = os.path.abspath(os.path.dirname(__file__)) + '/' + supplier_local_folders[idx][folder_num] + f'/{year}/{month}/{day}.tgz'
+              folder_dir = os.path.abspath(os.path.dirname(__file__)) + '/' + chosen_supplier + f'/{year}/{month}/'
+              local_file = os.path.abspath(os.path.dirname(__file__)) + '/' + chosen_supplier + f'/{year}/{month}/{day}.tgz'
 
             # Checks the suppliers index. If the index is LSports or Sportsradar not additional folders need to be created ourside Packets_for_Event_xxxxx
             # If the supplier isnt either of these, it will created the folder directory that will be referenced for extracting the files.
@@ -668,8 +713,8 @@ def start_gathering_packets_details_functions():
               if int(idx) == int(0):
                 # Opens up the paramiko client so that we can start pulling files from the server
                 ssh_client=paramiko.SSHClient()
-                ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                ssh_client.connect(hostname=hostname_str, username=username_str, password=password_str)
+                ssh_client.load_host_keys(filename=os.path.expanduser('~/.ssh/known_hosts'))
+                ssh_client.connect(hostname=str(events[i][4]), username=username, password=password, key_filename=os.path.expanduser('~/.ssh/id_rsa'))
                 ftp_client=ssh_client.open_sftp()
                 print("DOWNLOADING " + remote_file)
                 console_output_field["state"] = "normal"
@@ -724,8 +769,8 @@ def start_gathering_packets_details_functions():
               # If the supplier is Sportsradar
               elif int(idx) == int(1):
                 ssh_client=paramiko.SSHClient()
-                ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                ssh_client.connect(hostname=hostname_str, username=username_str, password=password_str)
+                ssh_client.load_host_keys(filename=os.path.expanduser('~/.ssh/known_hosts'))
+                ssh_client.connect(hostname=str(events[i][4]), username=username, password=password, key_filename=os.path.expanduser('~/.ssh/id_rsa'))
                 ftp_client=ssh_client.open_sftp()
                 print("DOWNLOADING " + remote_file)
                 console_output_field["state"] = "normal"
@@ -740,16 +785,21 @@ def start_gathering_packets_details_functions():
                   print("Remote Folder not in this directory")
               # If the supplier is not LSports or Sportradar
               else:
-                ssh_client=paramiko.SSHClient()
-                ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                ssh_client.connect(hostname=hostname_str, username=username_str, password=password_str)
-                console_output_field["state"] = "normal"
-                console_output_field.insert('end', 'Pulling files from ' + remote_file + ' for event ' + str(events[i][1]) + '\n')
-                console_output_field["state"] = "disabled"
-                console_output_field.see("end")
-                ftp_client=ssh_client.open_sftp()
-                ftp_client.get(remote_file, local_file)
-                ftp_client.close()
+                try:
+                  ssh_client=paramiko.SSHClient()
+                  ssh_client.load_host_keys(filename=os.path.expanduser('~/.ssh/known_hosts'))
+                  ssh_client.connect(hostname=str(events[i][4]), username=username, password=password, key_filename=os.path.expanduser('~/.ssh/id_rsa'))
+                  console_output_field["state"] = "normal"
+                  console_output_field.insert('end', 'Pulling files from ' + remote_file + ' for event ' + str(events[i][1]) + '\n')
+                  console_output_field["state"] = "disabled"
+                  console_output_field.see("end")
+                  ftp_client=ssh_client.open_sftp()
+                  ftp_client.get(remote_file, local_file)
+                  ftp_client.close()
+                except IOError as e:
+                  print("Directory dosnt exist. Checking next folder")
+                  shutil.rmtree(os.path.abspath(os.path.dirname(__file__)) + '/' + chosen_supplier + '/')
+                  continue
 
             console_output_field["state"] = "normal"
             console_output_field.insert('end', 'Packets have been pulled for Event ' + str(events[i][1]) + '\n')
@@ -820,11 +870,11 @@ def start_gathering_packets_details_functions():
                   shutil.move(os.path.join(event_folder + "/" + str(day), files), os.path.join(event_folder, files))
                 os.rmdir(str(event_folder + "/" + str(day)))
                 os.remove(local_file)
-                shutil.rmtree(os.path.abspath(os.path.dirname(__file__)) + '/' + supplier_local_folders[idx][folder_num] + '/')
+                shutil.rmtree(os.path.abspath(os.path.dirname(__file__)) + '/' + chosen_supplier + '/')
               else:
                 print("No Files in Folder Exists")
                 os.remove(local_file)
-                shutil.rmtree(os.path.abspath(os.path.dirname(__file__)) + '/' + supplier_local_folders[idx][folder_num] + '/')
+                shutil.rmtree(os.path.abspath(os.path.dirname(__file__)) + '/' + chosen_supplier + '/')
     
     # If the supplier is Betgenius or Betgenius_SC. We can find which files need to be replayed first based on the pattern StartTimeUtc
     # it wll check each file in the Packets_for_Events_xxxxxx folder for this pattern.
@@ -919,6 +969,7 @@ def start_gathering_packets_details_functions():
 
     # After last iteration of array - remove all events and details put into array so other events can be grabbed
     if i == int(events_length_compare - 1):
+      progress.stop()
       global event_counter
       print("This is the last Event in the array")
       console_output_field["state"] = "normal"
@@ -937,11 +988,7 @@ def start_gathering_packets_details_functions():
       add_event_details["state"] = "normal"
       start_gathering_packets_details["state"] = "disabled"
       format_json_button["state"] = "normal"
-
-hostname_label = Label(root, text="Hostname")
-hostname_label.place(x=30,y=50)
-hostname_input = Entry(root, width=50)
-hostname_input.place(x=120, y=50)
+      server_options["state"] = "normal"
       
 username_label = Label(root, text="Username")
 username_label.place(x=30,y=80)
@@ -956,12 +1003,18 @@ password_input.place(x=120, y=110)
 login_button = Button(root, text="Login", command=login_to_server)
 login_button.place(x=230,y=150)
 
-chosen_options_value = StringVar(root)
-chosen_options_value.set(supplier_options[2].split(" - ", 1)[1])
+supplier_label = Label(root, text="Supplier: ")
+supplier_label.place(x=30,y=275)
 
-options = OptionMenu(root, chosen_options_value, supplier_options[0].split(" - ", 1)[1], supplier_options[1].split(" - ", 1)[1], supplier_options[2].split(" - ", 1)[1], supplier_options[3].split(" - ", 1)[1], supplier_options[4].split(" - ", 1)[1], supplier_options[5].split(" - ", 1)[1], supplier_options[6].split(" - ", 1)[1], supplier_options[7].split(" - ", 1)[1], supplier_options[8].split(" - ", 1)[1], supplier_options[9].split(" - ", 1)[1], supplier_options[10].split(" - ", 1)[1], supplier_options[11].split(" - ", 1)[1], supplier_options[12].split(" - ", 1)[1], supplier_options[13].split(" - ", 1)[1], supplier_options[14].split(" - ", 1)[1], command=date_disabler)
-options.place(x=195, y=270)
-options["state"] = "disabled"
+# chosen_options_value = StringVar(root)
+# chosen_options_value.set(supplier_options[2].split(" - ", 1)[1])
+
+# options = OptionMenu(root, chosen_options_value, supplier_options[0].split(" - ", 1)[1], supplier_options[1].split(" - ", 1)[1], supplier_options[2].split(" - ", 1)[1], supplier_options[3].split(" - ", 1)[1], supplier_options[4].split(" - ", 1)[1], supplier_options[5].split(" - ", 1)[1], supplier_options[6].split(" - ", 1)[1], supplier_options[7].split(" - ", 1)[1], supplier_options[8].split(" - ", 1)[1], supplier_options[9].split(" - ", 1)[1], supplier_options[10].split(" - ", 1)[1], supplier_options[11].split(" - ", 1)[1], supplier_options[12].split(" - ", 1)[1], supplier_options[13].split(" - ", 1)[1], supplier_options[14].split(" - ", 1)[1], command=date_disabler)
+# options.place(x=115, y=270)
+# options["state"] = "disabled"
+
+server_label = Label(root, text="Server: ")
+server_label.place(x=300,y=275)
 
 event_id_label = Label(root, text="Event ID")
 event_id_label.place(x=30, y=310)
@@ -1007,6 +1060,9 @@ console_output_field = Text(root, wrap=WORD, yscrollcommand=yscrollbar.set)
 console_output_field["state"] = "disabled"
 console_output_field.place(x=600, y=80)
 console_output_field.config(height = 40)
+
+progress = Progressbar(root, orient=HORIZONTAL, length=300, mode='indeterminate')
+progress.place(x=800, y=30)
 
 yscrollbar.place(in_=console_output_field, relx=1.0, relheight=1.0, bordermode="outside")
 yscrollbar.config(command=console_output_field.yview)
