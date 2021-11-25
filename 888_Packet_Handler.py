@@ -1,19 +1,15 @@
 from tkinter import *
-from tkinter import filedialog
 from tkinter.ttk import Progressbar
 from tkcalendar import DateEntry
 import paramiko
 import time
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 import os
 import tarfile
 import re
 import shutil
 import threading
-import tempfile
-import binascii
-import atexit
-from stat import S_ISDIR, S_ISREG
+from stat import S_ISDIR
 import json
 
 # How to build
@@ -64,15 +60,17 @@ temp_directories = [] # Will add new subfolders for each directory
 supplier_directories = [] # This will hold the final directoires for that supplier
 folder_depth = 0 # Will be incremented by one after every folder check
 
+# Store server address
 known_host_servers = []
+# Store server name for the Supplier dropdown menu
 known_host_optionMenu = []
 
 # Verifys that the user has been able to SSH into the jumpbox before
 def login_to_server():
   global username
   global password
-  successful_login=0
 
+  successful_login=0
   username = username_input.get()
   password = password_input.get()
   username_input.delete(0, "end")
@@ -1005,13 +1003,6 @@ login_button.place(x=230,y=150)
 
 supplier_label = Label(root, text="Supplier: ")
 supplier_label.place(x=30,y=275)
-
-# chosen_options_value = StringVar(root)
-# chosen_options_value.set(supplier_options[2].split(" - ", 1)[1])
-
-# options = OptionMenu(root, chosen_options_value, supplier_options[0].split(" - ", 1)[1], supplier_options[1].split(" - ", 1)[1], supplier_options[2].split(" - ", 1)[1], supplier_options[3].split(" - ", 1)[1], supplier_options[4].split(" - ", 1)[1], supplier_options[5].split(" - ", 1)[1], supplier_options[6].split(" - ", 1)[1], supplier_options[7].split(" - ", 1)[1], supplier_options[8].split(" - ", 1)[1], supplier_options[9].split(" - ", 1)[1], supplier_options[10].split(" - ", 1)[1], supplier_options[11].split(" - ", 1)[1], supplier_options[12].split(" - ", 1)[1], supplier_options[13].split(" - ", 1)[1], supplier_options[14].split(" - ", 1)[1], command=date_disabler)
-# options.place(x=115, y=270)
-# options["state"] = "disabled"
 
 server_label = Label(root, text="Server: ")
 server_label.place(x=300,y=275)
