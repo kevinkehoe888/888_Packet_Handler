@@ -1,4 +1,3 @@
-from http import server
 from tkinter import *
 import os
 import paramiko
@@ -7,11 +6,11 @@ import paramiko
 # pyinstaller --onefile --hidden-import babel.numbers --windowed 888_Packet_Handler.py
 
 known_host_servers, known_host_optionMenu = [], []
-succesful_login = 0
+successful_login = 0
 
 root = Tk()
 root.title("888 Packet Handler")
-root.geometry("1000x500")
+root.geometry("1000x550")
 
 supplier_options = [
   ["lsport", "LSports"],
@@ -31,7 +30,7 @@ supplier_options = [
   ["BGIN_SC", "BetGenius_SC"]
 ]
 
-def login_to_server(username, password):
+def login_to_server(username, password, successful_login):
     username_input.delete(0, "end")
     username_input["state"] = "disabled"
     password_input.delete(0, "end")
@@ -80,8 +79,27 @@ def login_to_server(username, password):
 
     if succesful_login != 0:
         username_input["state"] = "disabled"
+        password_input["state"] = "disabled"
         login_button["state"] = "disabled"
+        add_date_button["state"] = "normal"
+        delete_date_button["state"] = "disabled"
+        add_event_details["state"] = "normal"
+        start_gathering_packets_details["state"] = "disabled"
+        server_options["state"] = "normal"
+
+        #Loading Supplier Dropdown
+        chosen_options_value = StringVar(root)
+        chosen_options_value.set(supplier_options[2][1])
+        options = OptionMenu(root, chosen_options_value, supplier_options[0][1], supplier_options[1][1], supplier_options[2][1], supplier_options[3][1], supplier_options[4][1], supplier_options[5][1], supplier_options[6][1], supplier_options[7][1], supplier_options[8][1], supplier_options[9][1], supplier_options[10][1], supplier_options[11][1], supplier_options[12][1], supplier_options[13][1], supplier_options[14][1])#, command=date_disabler)
+        options.place(x=115, y=270)
+
+        # Loading Server Dropdown
+        chosen_server_value = StringVar(root)
+        chosen_server_value.set(known_host_optionMenu[0])
+        server_options = OptionMenu(root, chosen_server_value, *known_host_optionMenu)
+        server_options.place(x=350, y=270)
         print(f"SUCCESSFUL LOGINS {succesful_login}")
+
 
 
 
@@ -95,7 +113,56 @@ password_label.place(x=30,y=60)
 password_input = Entry(root, width=30, show="*")
 password_input.place(x=120, y=60)
 
-login_button = Button(root, text="Login", command=lambda:login_to_server(username_input.get(), password_input.get()))
+login_button = Button(root, text="Login", command=lambda:login_to_server(username_input.get(), password_input.get(), successful_login))
 login_button.place(x=180,y=90)
+
+supplier_label = Label(root, text="Supplier: ")
+supplier_label.place(x=400,y=18)
+
+server_label = Label(root, text="Server: ")
+server_label.place(x=670,y=18)
+
+event_id_label = Label(root, text="Event ID")
+event_id_label.place(x=400, y=50)
+event_id_input = Entry(root, width=50)
+event_id_input["state"] = "disabled"
+event_id_input.place(x=490, y=50)
+
+feed_event_id_label = Label(root, text="Feed Event ID")
+feed_event_id_label.place(x=400, y=80)
+feed_event_id_input = Entry(root, width=50)
+feed_event_id_input["state"] = "disabled"
+feed_event_id_input.place(x=490,y=80)
+
+add_date_button = Button(root, text="Add Date Field")#, command=add_date_function)
+add_date_button["state"] = "disabled"
+add_date_button.place(x=400,y=110)
+
+delete_date_button = Button(root, text="Delete Date Field")#, command=delete_date_function)
+delete_date_button["state"] = "disabled"
+delete_date_button.place(x=510,y=110)
+
+add_event_details = Button(root, text="Add Event")#, command=add_event_details_function)
+add_event_details["state"] = "disabled"
+add_event_details.place(x=630,y=110)
+
+start_gathering_packets_details = Button(root, text="Start Packet Gathering")#, command=lambda:threading.Thread(target=start_gathering_packets_details_functions).start())
+start_gathering_packets_details["state"] = "disabled"
+start_gathering_packets_details.place(x=720, y=110)
+
+#Scrollable Date Sections
+date_canvas = Canvas(root, width=450, height = 200)
+date_canvas_scroll_y = Scrollbar(root, orient="vertical", command=date_canvas.yview)
+date_frame = Frame(date_canvas)
+
+# put the frame in the canvas
+date_canvas.create_window(0, 0, anchor='nw', window=date_frame)
+# make sure everything is displayed before configuring the scrollregion
+date_canvas.update_idletasks()
+date_canvas.configure(scrollregion=date_canvas.bbox('all'), yscrollcommand=date_canvas_scroll_y.set)            
+date_canvas.pack(fill='both', side='left')
+date_canvas_scroll_y.pack(fill='y', side='right')
+date_canvas_scroll_y.place(in_=date_canvas, relx=1.0, relheight=1.0, bordermode="outside")
+date_canvas.place(x=400, y=150)
 
 root.mainloop()
