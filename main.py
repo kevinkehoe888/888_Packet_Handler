@@ -163,6 +163,6 @@ date_canvas.configure(scrollregion=date_canvas.bbox('all'), yscrollcommand=date_
 date_canvas.pack(fill='both', side='left')
 date_canvas_scroll_y.pack(fill='y', side='right')
 date_canvas_scroll_y.place(in_=date_canvas, relx=1.0, relheight=1.0, bordermode="outside")
-date_canvas.place(x=400, y=150)
+date_canvas.place(x=420, y=150)
 
 root.mainloop()
