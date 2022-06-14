@@ -1,12 +1,15 @@
+import threading
 from tkinter import *
 from tkcalendar import DateEntry
 import os
 import paramiko
+import universal_functions
+
 
 # How to build
 # pyinstaller --onefile --hidden-import babel.numbers --windowed 888_Packet_Handler.py
 
-known_host_servers, known_host_optionMenu, events = ["jump.spectateprod.com", "jump.spectateprodusa.com", "jump.spectatemirage.com"], ["TEST1", "TEST2", "TEST3"], []
+known_host_servers, known_host_optionMenu, events = ["jump.spectateprod.com", "jump.spectateprodusa.com", "jump.spectatemirage.com"], ["PROD", "PRODUSA", "MIRAGE"], []
 date_labels, dates = {}, {}
 successful_login, date_counter, date_labels_y_pos = 0, 0, 0
 
@@ -115,8 +118,8 @@ def add_date_function():
   date_labels["date_label{0}".format(date_counter)].grid(column=0, row=date_labels_y_pos, sticky=W, padx=(120,10), pady=5)
   dates["date_{0}".format(date_counter)] = DateEntry(date_frame, values=date_counter, year=2022, state="readonly", date_pattern="yyyy-mm-dd")
   dates["date_{0}".format(date_counter)].grid(column=1, row=date_labels_y_pos, sticky=E, pady=5)
-  date_labels_y_pos = date_labels_y_pos + 1
-  date_counter = date_counter + 1
+  date_labels_y_pos += 1
+  date_counter += 1
 
   # Everytime a date is added into the frame the scrollable bar will become active
   date_canvas.update_idletasks()
@@ -135,8 +138,8 @@ def delete_date_function():
   dates["date_{0}".format(date_counter - 1)].destroy()
   del date_labels[date_label_str]
   del dates[dates_str]
-  date_labels_y_pos = date_labels_y_pos - 1
-  date_counter = date_counter - 1
+  date_labels_y_pos -= 1
+  date_counter -= 1
   # Everytime a date is remeoved from the frame the scrollable bar will update if dates exceed the current view
   date_canvas.update_idletasks()
   date_canvas.configure(scrollregion=date_canvas.bbox('all'), yscrollcommand=date_canvas_scroll_y.set)
@@ -167,15 +170,16 @@ def add_event_details_function(supplier, server, event_id, feed_event_id, dates)
         print("Please include an Feed Event ID")
         return
     
-    if not dates:
+    if not dates and supplier in (0,1):
         print("No Dates needed")
         events.append([supplier, server, event_id, feed_event_id])
+    elif not dates and supplier not in (0,1):
+        print("Dates are needed for this supplier")
+        return
     else:
         temp_dates = []
         for index, value in dates.items():
             temp_dates.append(str(value.get_date()))
-
-        #print(supplier, server, event_id, feed_event_id, temp_dates)
         events.append([supplier, server, event_id, feed_event_id, temp_dates])
     print(events)
 
@@ -196,6 +200,9 @@ def date_disabler(supplier):
         add_date_button["state"] = "normal"
         delete_date_button["state"] = "disabled"
 
+def start_gathering_packets_details_functions():
+    for index, value in enumerate(events):
+        universal_functions.create_folders(value[2])
 # TEST LABELS
 #Loading Supplier Dropdown
 chosen_options_value = StringVar(root)
@@ -254,8 +261,8 @@ add_event_details = Button(root, text="Add Event", command=lambda:add_event_deta
 #add_event_details["state"] = "disabled"
 add_event_details.place(x=630,y=110)
 
-start_gathering_packets_details = Button(root, text="Start Packet Gathering")#, command=lambda:threading.Thread(target=start_gathering_packets_details_functions).start())
-start_gathering_packets_details["state"] = "disabled"
+start_gathering_packets_details = Button(root, text="Start Packet Gathering", command=lambda:threading.Thread(target=start_gathering_packets_details_functions).start())
+#start_gathering_packets_details["state"] = "disabled"
 start_gathering_packets_details.place(x=720, y=110)
 
 #Scrollable Date Sections
