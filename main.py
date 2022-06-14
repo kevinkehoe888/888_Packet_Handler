@@ -93,7 +93,7 @@ def login_to_server(username, password, successful_login):
         #Loading Supplier Dropdown
         chosen_options_value = StringVar(root)
         chosen_options_value.set(supplier_options[2][1])
-        options = OptionMenu(root, chosen_options_value, supplier_options[0][1], supplier_options[1][1], supplier_options[2][1], supplier_options[3][1], supplier_options[4][1], supplier_options[5][1], supplier_options[6][1], supplier_options[7][1], supplier_options[8][1], supplier_options[9][1], supplier_options[10][1], supplier_options[11][1], supplier_options[12][1], supplier_options[13][1], supplier_options[14][1])#, command=date_disabler)
+        options = OptionMenu(root, chosen_options_value, supplier_options[0][1], supplier_options[1][1], supplier_options[2][1], supplier_options[3][1], supplier_options[4][1], supplier_options[5][1], supplier_options[6][1], supplier_options[7][1], supplier_options[8][1], supplier_options[9][1], supplier_options[10][1], supplier_options[11][1], supplier_options[12][1], supplier_options[13][1], supplier_options[14][1], command=lambda _:date_disabler(chosen_options_value.get()))
         options.place(x=485, y=13)
 
         # Loading Server Dropdown
@@ -102,6 +102,10 @@ def login_to_server(username, password, successful_login):
         server_options = OptionMenu(root, chosen_server_value, *known_host_optionMenu)
         server_options.place(x=720, y=13)
         print(f"SUCCESSFUL LOGINS {succesful_login}")
+    else:
+        username_input["state"] = "normal"
+        password_input["state"] = "normal"
+        login_button["state"] = "normal"
 
 # This function will allow The Labels and DateEntrys to be added with their own keys. Ex - date_label1 or date_12 etc.
 def add_date_function():
@@ -139,8 +143,8 @@ def delete_date_function():
   if delete_date_button["state"] == "normal" and date_counter == 0:
     delete_date_button["state"] = "disabled"
 
+# Adds and checks date range(still need to implement date range)
 def add_event_details_function(supplier, server, event_id, feed_event_id, dates):
-    temp_dates = []
     # Set supplier index
     for index, value in enumerate(supplier_options):
         if supplier == value[1]:
@@ -162,20 +166,41 @@ def add_event_details_function(supplier, server, event_id, feed_event_id, dates)
     if not feed_event_id:
         print("Please include an Feed Event ID")
         return
+    
+    if not dates:
+        print("No Dates needed")
+        events.append([supplier, server, event_id, feed_event_id])
+    else:
+        temp_dates = []
+        for index, value in dates.items():
+            temp_dates.append(str(value.get_date()))
 
-    for index, value in dates.items():
-        temp_dates.append(str(value.get_date()))
-
-    print(supplier, server, event_id, feed_event_id, temp_dates)
-    events.append([supplier, server, event_id, feed_event_id, temp_dates])
+        #print(supplier, server, event_id, feed_event_id, temp_dates)
+        events.append([supplier, server, event_id, feed_event_id, temp_dates])
     print(events)
 
+# Clear dates and disabled add_dates button for certain supplier
+def date_disabler(supplier):
+    for index, value in enumerate(supplier_options):
+        if supplier == value[1]:
+            supplier = index
+            break
+    if supplier in (0, 1):
+        add_date_button["state"] = "disabled"
+        delete_date_button["state"] = "disabled"
+        for i in range(date_counter):
+            delete_date_function()
+    else:
+        for i in range(date_counter):
+            delete_date_function()
+        add_date_button["state"] = "normal"
+        delete_date_button["state"] = "disabled"
 
 # TEST LABELS
 #Loading Supplier Dropdown
 chosen_options_value = StringVar(root)
 chosen_options_value.set(supplier_options[2][1])
-options = OptionMenu(root, chosen_options_value, supplier_options[0][1], supplier_options[1][1], supplier_options[2][1], supplier_options[3][1], supplier_options[4][1], supplier_options[5][1], supplier_options[6][1], supplier_options[7][1], supplier_options[8][1], supplier_options[9][1], supplier_options[10][1], supplier_options[11][1], supplier_options[12][1], supplier_options[13][1], supplier_options[14][1])#, command=date_disabler)
+options = OptionMenu(root, chosen_options_value, supplier_options[0][1], supplier_options[1][1], supplier_options[2][1], supplier_options[3][1], supplier_options[4][1], supplier_options[5][1], supplier_options[6][1], supplier_options[7][1], supplier_options[8][1], supplier_options[9][1], supplier_options[10][1], supplier_options[11][1], supplier_options[12][1], supplier_options[13][1], supplier_options[14][1], command=lambda _:date_disabler(chosen_options_value.get()))
 options.place(x=485, y=13)
 
 # Loading Server Dropdown
