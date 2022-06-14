@@ -1,4 +1,5 @@
 from tkinter import *
+from tkcalendar import DateEntry
 import os
 import paramiko
 
@@ -6,7 +7,8 @@ import paramiko
 # pyinstaller --onefile --hidden-import babel.numbers --windowed 888_Packet_Handler.py
 
 known_host_servers, known_host_optionMenu = [], []
-successful_login = 0
+date_labels, dates = {}, {}
+successful_login, date_counter, date_labels_y_pos = 0, 0, 0
 
 root = Tk()
 root.title("888 Packet Handler")
@@ -100,8 +102,41 @@ def login_to_server(username, password, successful_login):
         server_options.place(x=350, y=270)
         print(f"SUCCESSFUL LOGINS {succesful_login}")
 
+# This function will allow The Labels and DateEntrys to be added with their own keys. Ex - date_label1 or date_12 etc.
+def add_date_function():
+  global date_counter
+  global date_labels_y_pos
+  date_labels["date_label{0}".format(date_counter)] = Label(date_frame, text="Date #" + str(date_counter + 1))
+  date_labels["date_label{0}".format(date_counter)].grid(column=0, row=date_labels_y_pos, sticky=W, padx=(120,10), pady=5)
+  dates["date_{0}".format(date_counter)] = DateEntry(date_frame, values=date_counter, year=2022, state="readonly", date_pattern="yyyy-mm-dd")
+  dates["date_{0}".format(date_counter)].grid(column=1, row=date_labels_y_pos, sticky=E, pady=5)
+  date_labels_y_pos = date_labels_y_pos + 1
+  date_counter = date_counter + 1
 
+  # Everytime a date is added into the frame the scrollable bar will become active
+  date_canvas.update_idletasks()
+  date_canvas.configure(scrollregion=date_canvas.bbox('all'), yscrollcommand=date_canvas_scroll_y.set)
+  date_canvas.yview_moveto(1)
+  if delete_date_button["state"] == "disabled":
+    delete_date_button["state"] = "normal"
 
+# This function will delete the newest date added. If the date_counter is none the button will be disabled
+def delete_date_function():
+  global date_counter
+  global date_labels_y_pos
+  date_label_str="date_label{0}".format(date_counter - 1)
+  dates_str="date_{0}".format(date_counter - 1)
+  date_labels["date_label{0}".format(date_counter - 1)].destroy()
+  dates["date_{0}".format(date_counter - 1)].destroy()
+  del date_labels[date_label_str]
+  del dates[dates_str]
+  date_labels_y_pos = date_labels_y_pos - 1
+  date_counter = date_counter - 1
+  # Everytime a date is remeoved from the frame the scrollable bar will update if dates exceed the current view
+  date_canvas.update_idletasks()
+  date_canvas.configure(scrollregion=date_canvas.bbox('all'), yscrollcommand=date_canvas_scroll_y.set)
+  if delete_date_button["state"] == "normal" and date_counter == 0:
+    delete_date_button["state"] = "disabled"
 
 username_label = Label(root, text="Username")
 username_label.place(x=30,y=30)
@@ -134,11 +169,11 @@ feed_event_id_input = Entry(root, width=50)
 feed_event_id_input["state"] = "disabled"
 feed_event_id_input.place(x=490,y=80)
 
-add_date_button = Button(root, text="Add Date Field")#, command=add_date_function)
+add_date_button = Button(root, text="Add Date Field", command=add_date_function)
 add_date_button["state"] = "disabled"
 add_date_button.place(x=400,y=110)
 
-delete_date_button = Button(root, text="Delete Date Field")#, command=delete_date_function)
+delete_date_button = Button(root, text="Delete Date Field", command=delete_date_function)
 delete_date_button["state"] = "disabled"
 delete_date_button.place(x=510,y=110)
 
