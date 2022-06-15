@@ -4,6 +4,7 @@ from tkcalendar import DateEntry
 import os
 import paramiko
 import universal_functions
+import suppliers
 
 
 # How to build
@@ -12,7 +13,7 @@ import universal_functions
 known_host_servers, known_host_optionMenu, events = ["jump.spectateprod.com", "jump.spectateprodusa.com", "jump.spectatemirage.com"], ["PROD", "PRODUSA", "MIRAGE"], []
 date_labels, dates = {}, {}
 successful_login, date_counter, date_labels_y_pos = 0, 0, 0
-
+username_a, password_a = "", ""
 root = Tk()
 root.title("888 Packet Handler")
 root.geometry("1000x550")
@@ -79,19 +80,28 @@ def login_to_server(username, password, successful_login):
         else:
             print('Connection to server has been successful')
             client.close()
-            succesful_login += 1
+            successful_login += 1
             known_host_optionMenu.append(server)
             print(known_host_optionMenu[index], known_host_servers[index])
 
-    if succesful_login != 0:
+    if successful_login != 0:
         username_input["state"] = "disabled"
         password_input["state"] = "disabled"
         login_button["state"] = "disabled"
+        event_id_input["state"] = "normal"
+        feed_event_id_input["state"] = "normal"
         add_date_button["state"] = "normal"
         delete_date_button["state"] = "disabled"
         add_event_details["state"] = "normal"
         start_gathering_packets_details["state"] = "disabled"
-        server_options["state"] = "normal"
+
+        global chosen_options_value
+        global chosen_server_value
+        global username_a
+        global password_a
+
+        username_a = username
+        password_a = password
 
         #Loading Supplier Dropdown
         chosen_options_value = StringVar(root)
@@ -104,7 +114,7 @@ def login_to_server(username, password, successful_login):
         chosen_server_value.set(known_host_optionMenu[0])
         server_options = OptionMenu(root, chosen_server_value, *known_host_optionMenu)
         server_options.place(x=720, y=13)
-        print(f"SUCCESSFUL LOGINS {succesful_login}")
+        print(f"SUCCESSFUL LOGINS {successful_login}")
     else:
         username_input["state"] = "normal"
         password_input["state"] = "normal"
@@ -147,7 +157,13 @@ def delete_date_function():
     delete_date_button["state"] = "disabled"
 
 # Adds and checks date range(still need to implement date range)
-def add_event_details_function(supplier, server, event_id, feed_event_id, dates):
+def add_event_details_function(event_id, feed_event_id, dates):
+    global chosen_options_value
+    global chosen_server_value
+
+    supplier = chosen_options_value.get()
+    server = chosen_server_value.get()
+
     # Set supplier index
     for index, value in enumerate(supplier_options):
         if supplier == value[1]:
@@ -181,6 +197,9 @@ def add_event_details_function(supplier, server, event_id, feed_event_id, dates)
         for index, value in dates.items():
             temp_dates.append(str(value.get_date()))
         events.append([supplier, server, event_id, feed_event_id, temp_dates])
+
+    if events:
+        start_gathering_packets_details["state"] = "normal"
     print(events)
 
 # Clear dates and disabled add_dates button for certain supplier
@@ -200,24 +219,13 @@ def date_disabler(supplier):
         add_date_button["state"] = "normal"
         delete_date_button["state"] = "disabled"
 
-def start_gathering_packets_details_functions():
+def start_gathering_packets_details_functions(username, password):
     for index, value in enumerate(events):
-        universal_functions.create_folders(value[2])
-# TEST LABELS
-#Loading Supplier Dropdown
-chosen_options_value = StringVar(root)
-chosen_options_value.set(supplier_options[2][1])
-options = OptionMenu(root, chosen_options_value, supplier_options[0][1], supplier_options[1][1], supplier_options[2][1], supplier_options[3][1], supplier_options[4][1], supplier_options[5][1], supplier_options[6][1], supplier_options[7][1], supplier_options[8][1], supplier_options[9][1], supplier_options[10][1], supplier_options[11][1], supplier_options[12][1], supplier_options[13][1], supplier_options[14][1], command=lambda _:date_disabler(chosen_options_value.get()))
-options.place(x=485, y=13)
-
-# Loading Server Dropdown
-chosen_server_value = StringVar(root)
-chosen_server_value.set(known_host_optionMenu[0])
-server_options = OptionMenu(root, chosen_server_value, *known_host_optionMenu)
-server_options.place(x=720, y=13)
-
-# END OF TEST LABELS
-
+        event_folder = universal_functions.create_folders(value[2])
+        chosen_directories = suppliers.choose_supplier_directories(value[0])
+        suppliers.supplier_functions[value[0]](value[0], value[1], value[3], event_folder, chosen_directories, value[4], username, password)
+        
+  
 username_label = Label(root, text="Username")
 username_label.place(x=30,y=30)
 username_input = Entry(root, width=30)
@@ -240,29 +248,29 @@ server_label.place(x=670,y=18)
 event_id_label = Label(root, text="Event ID")
 event_id_label.place(x=400, y=50)
 event_id_input = Entry(root, width=50)
-#event_id_input["state"] = "disabled"
+event_id_input["state"] = "disabled"
 event_id_input.place(x=490, y=50)
 
 feed_event_id_label = Label(root, text="Feed Event ID")
 feed_event_id_label.place(x=400, y=80)
 feed_event_id_input = Entry(root, width=50)
-#feed_event_id_input["state"] = "disabled"
+feed_event_id_input["state"] = "disabled"
 feed_event_id_input.place(x=490,y=80)
 
 add_date_button = Button(root, text="Add Date Field", command=add_date_function)
-#add_date_button["state"] = "disabled"
+add_date_button["state"] = "disabled"
 add_date_button.place(x=400,y=110)
 
 delete_date_button = Button(root, text="Delete Date Field", command=delete_date_function)
-#delete_date_button["state"] = "disabled"
+delete_date_button["state"] = "disabled"
 delete_date_button.place(x=510,y=110)
 
-add_event_details = Button(root, text="Add Event", command=lambda:add_event_details_function(chosen_options_value.get(), chosen_server_value.get(), event_id_input.get(), feed_event_id_input.get(), dates))
-#add_event_details["state"] = "disabled"
+add_event_details = Button(root, text="Add Event", command=lambda:add_event_details_function(event_id_input.get(), feed_event_id_input.get(), dates))
+add_event_details["state"] = "disabled"
 add_event_details.place(x=630,y=110)
 
-start_gathering_packets_details = Button(root, text="Start Packet Gathering", command=lambda:threading.Thread(target=start_gathering_packets_details_functions).start())
-#start_gathering_packets_details["state"] = "disabled"
+start_gathering_packets_details = Button(root, text="Start Packet Gathering", command=lambda:threading.Thread(target=start_gathering_packets_details_functions(username_a, password_a)).start())
+start_gathering_packets_details["state"] = "disabled"
 start_gathering_packets_details.place(x=720, y=110)
 
 #Scrollable Date Sections

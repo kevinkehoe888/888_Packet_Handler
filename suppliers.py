@@ -1,3 +1,5 @@
+import universal_functions
+
 supplier_remote_folders = [
     [
         "/mnt/feeds_data/fi_lsports_connector/markets_meta", 
@@ -94,4 +96,29 @@ supplier_remote_folders = [
         "/mnt/feeds_data/i-05dbabedb7c00a400/feed_connector/BGIN_SC",
         "/mnt/feeds_data/i-0bd644c5c4eb7964c/feed_connector/BGIN_SC"
     ]
+]
+
+
+def choose_supplier_directories(supplier):
+    return supplier_remote_folders[supplier]
+
+def lsports_packets():
+    print("LSPORTS")
+def sportsradar_packets():
+    print("SPORTSRADAR")
+
+def metric_packets(supplier, host, feed_event_id, event_folder, chosen_directories, dates, username, password):
+    print("METRIC")
+    for index, value in enumerate(dates):
+        year = value[0:4]
+        month = value[5:7]
+        day = value[8:10]
+
+        for i in chosen_directories:
+            universal_functions.download_filter_day(supplier, host, feed_event_id, f"{event_folder}/{day}.tgz", event_folder, f"{i}/{year}/{month}/{day}.tgz", username, password, day)
+
+supplier_functions = [
+    lsports_packets,
+    sportsradar_packets,
+    metric_packets
 ]
