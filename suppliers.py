@@ -1,3 +1,5 @@
+import os
+import shutil
 import universal_functions
 
 supplier_remote_folders = [
@@ -107,7 +109,7 @@ def lsports_packets():
 def sportsradar_packets():
     print("SPORTSRADAR")
 
-def metric_packets(supplier, host, feed_event_id, event_folder, chosen_directories, dates, username, password):
+def metric_packets(supplier, host, feed_event_id, event_folder, chosen_directories, dates, username, password, tag):
     print("METRIC")
     for index, value in enumerate(dates):
         year = value[0:4]
@@ -115,10 +117,51 @@ def metric_packets(supplier, host, feed_event_id, event_folder, chosen_directori
         day = value[8:10]
 
         for i in chosen_directories:
-            universal_functions.download_filter_day(supplier, host, feed_event_id, f"{event_folder}/{day}.tgz", event_folder, f"{i}/{year}/{month}/{day}.tgz", username, password, day)
+            print(i)
+            universal_functions.download_filter_day(supplier, host, feed_event_id, f"{event_folder}/{day}.tgz", event_folder, f"{i}/{year}/{month}/{day}.tgz", username, password, day, tag)
+    # Zipped Event Folder and Remove it to save space
+    shutil.make_archive(os.path.join(event_folder), 'zip', os.path.join(event_folder))
+    shutil.rmtree(event_folder)
+
+def at_the_races_packets():
+    print("TEST")
+def racing_uk_packets():
+    print("TEST")
+def spin_horse_racing_packets():
+    print("TEST")
+def cmt_packets():
+    print("TEST")
+def press_association_packets():
+    print("TEST")
+def dogs_packets():
+    print("TEST")
+def betradar_packets():
+    print("TEST")
+def betradar_inplay_packets():
+    print("TEST")
+def sporting_solutions_packets():
+    print("TEST")
+def sporting_solutions_inplay_packets():
+    print("TEST")
+def betgenius_inplay_packets(supplier, host, feed_event_id, event_folder, chosen_directories, dates, username, password):
+    print("BETGENIUS INPLAY")
+def betgenius_inplay_sc_packets():
+    print("TEST")
 
 supplier_functions = [
     lsports_packets,
     sportsradar_packets,
-    metric_packets
+    [metric_packets, "eventId"],
+    at_the_races_packets,
+    racing_uk_packets,
+    spin_horse_racing_packets,
+    cmt_packets,
+    press_association_packets,
+    dogs_packets,
+    betradar_packets,
+    betradar_inplay_packets,
+    sporting_solutions_packets,
+    sporting_solutions_inplay_packets,
+    betgenius_inplay_packets,
+    betgenius_inplay_sc_packets
 ]

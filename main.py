@@ -223,7 +223,8 @@ def start_gathering_packets_details_functions(username, password):
     for index, value in enumerate(events):
         event_folder = universal_functions.create_folders(value[2])
         chosen_directories = suppliers.choose_supplier_directories(value[0])
-        suppliers.supplier_functions[value[0]](value[0], value[1], value[3], event_folder, chosen_directories, value[4], username, password)
+        suppliers.supplier_functions[value[0]][0](value[0], value[1], value[3], event_folder, chosen_directories, value[4], username, password, suppliers.supplier_functions[value[0]][1])
+        print("FINISHED")
         
   
 username_label = Label(root, text="Username")
