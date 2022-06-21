@@ -19,21 +19,20 @@ root.title("888 Packet Handler")
 root.geometry("1000x550")
 
 supplier_options = [
-  ["lsport", "LSports"],
-  ["sportradar", "SportRadar"],
-  ["METRIC", "Metric Gaming"],
-  ["AT_THE_RACES", "At The Races"],
-  ["RACING_UK", "Racing UK"],
-  ["SIS", "SPIN Horse Racing"],
-  ["CMT", "CMT"],
-  ["PA", "Press Association"],
-  ["PAGH", "Dogs"],
-  ["BR", "BetRadar"],
-  ["BRIN", "BetRadar Inplay"],
-  ["SSOL", "Sporting Solutions"],
-  ["SSOLIN", "Sporting Solutions InPlay"],
-  ["BGIN", "BetGenius"],
-  ["BGIN_SC", "BetGenius_SC"]
+  ["lsport", "LSports"], # todo
+  ["sportradar", "SportRadar"], # todo
+  ["METRIC", "Metric Gaming"], # done
+  ["AT_THE_RACES", "At The Races"],# remove
+  ["RACING_UK", "Racing UK"], # remove
+  ["SIS", "SPIN Horse Racing"], # remove
+  ["CMT", "CMT"], # remove
+  ["PA", "Press Association"], # done
+  ["PAGH", "Dogs"], # done
+  ["BR", "BetRadar"], # done
+  ["BRIN", "BetRadar Inplay"], # done
+  ["SSOL", "Sporting Solutions"], # done
+  ["SSOLIN", "Sporting Solutions InPlay"], # done
+  ["BGIN", "BetGenius"] # done
 ]
 
 # This function will test logins on all servers. If its successful the server can be chosen later.
@@ -106,7 +105,7 @@ def login_to_server(username, password, successful_login):
         #Loading Supplier Dropdown
         chosen_options_value = StringVar(root)
         chosen_options_value.set(supplier_options[2][1])
-        options = OptionMenu(root, chosen_options_value, supplier_options[0][1], supplier_options[1][1], supplier_options[2][1], supplier_options[3][1], supplier_options[4][1], supplier_options[5][1], supplier_options[6][1], supplier_options[7][1], supplier_options[8][1], supplier_options[9][1], supplier_options[10][1], supplier_options[11][1], supplier_options[12][1], supplier_options[13][1], supplier_options[14][1], command=lambda _:date_disabler(chosen_options_value.get()))
+        options = OptionMenu(root, chosen_options_value, supplier_options[0][1], supplier_options[1][1], supplier_options[2][1], supplier_options[3][1], supplier_options[4][1], supplier_options[5][1], supplier_options[6][1], supplier_options[7][1], supplier_options[8][1], supplier_options[9][1], supplier_options[10][1], supplier_options[11][1], supplier_options[12][1], supplier_options[13][1], command=lambda _:date_disabler(chosen_options_value.get()))
         options.place(x=485, y=13)
 
         # Loading Server Dropdown
@@ -223,7 +222,7 @@ def start_gathering_packets_details_functions(username, password):
     for index, value in enumerate(events):
         event_folder = universal_functions.create_folders(value[2])
         chosen_directories = suppliers.choose_supplier_directories(value[0])
-        suppliers.supplier_functions[value[0]][0](value[0], value[1], value[3], event_folder, chosen_directories, value[4], username, password, suppliers.supplier_functions[value[0]][1])
+        suppliers.supplier_functions[value[0]](value[0], value[1], value[3], event_folder, chosen_directories, value[4], username, password)
         print("FINISHED")
         
   

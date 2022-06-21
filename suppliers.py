@@ -4,6 +4,7 @@ import universal_functions
 
 supplier_remote_folders = [
     [
+        "/mnt/feeds_data/fi_lsports_connector/"
         "/mnt/feeds_data/fi_lsports_connector/markets_meta", 
         "/mnt/feeds_data/fi_lsports_connector/outright_league_markets_meta", 
         "/mnt/feeds_data/fi_lsports_connector/outright_leagues_meta", 
@@ -93,10 +94,6 @@ supplier_remote_folders = [
     [
         "/mnt/feeds_data/i-05dbabedb7c00a400/feed_connector/BGIN",
         "/mnt/feeds_data/i-0bd644c5c4eb7964c/feed_connector/BGIN"
-    ],
-    [
-        "/mnt/feeds_data/i-05dbabedb7c00a400/feed_connector/BGIN_SC",
-        "/mnt/feeds_data/i-0bd644c5c4eb7964c/feed_connector/BGIN_SC"
     ]
 ]
 
@@ -109,7 +106,7 @@ def lsports_packets():
 def sportsradar_packets():
     print("SPORTSRADAR")
 
-def metric_packets(supplier, host, feed_event_id, event_folder, chosen_directories, dates, username, password, tag):
+def metric_packets(supplier, host, feed_event_id, event_folder, chosen_directories, dates, username, password):
     print("METRIC")
     for index, value in enumerate(dates):
         year = value[0:4]
@@ -118,7 +115,7 @@ def metric_packets(supplier, host, feed_event_id, event_folder, chosen_directori
 
         for i in chosen_directories:
             print(i)
-            universal_functions.download_filter_day(supplier, host, feed_event_id, f"{event_folder}/{day}.tgz", event_folder, f"{i}/{year}/{month}/{day}.tgz", username, password, day, tag)
+            universal_functions.download_filter_day(supplier, host, feed_event_id, f"{event_folder}/{day}.tgz", event_folder, f"{i}/{year}/{month}/{day}.tgz", username, password, day)
     # Zipped Event Folder and Remove it to save space
     shutil.make_archive(os.path.join(event_folder), 'zip', os.path.join(event_folder))
     shutil.rmtree(event_folder)
@@ -131,27 +128,106 @@ def spin_horse_racing_packets():
     print("TEST")
 def cmt_packets():
     print("TEST")
-def press_association_packets():
-    print("TEST")
-def dogs_packets():
-    print("TEST")
-def betradar_packets():
-    print("TEST")
-def betradar_inplay_packets():
-    print("TEST")
-def sporting_solutions_packets():
-    print("TEST")
-def sporting_solutions_inplay_packets():
-    print("TEST")
+def press_association_packets(supplier, host, feed_event_id, event_folder, chosen_directories, dates, username, password):
+    print("PA")
+    for index, value in enumerate(dates):
+        year = value[0:4]
+        month = value[5:7]
+        day = value[8:10]
+
+        for i in chosen_directories:
+            print(f"{i}/{year}/{month}/{day}.tgz")
+            universal_functions.download_filter_day(supplier, host, feed_event_id, f"{event_folder}/{day}.tgz", event_folder, f"{i}/{year}/{month}/{day}.tgz", username, password, day)
+    # Zipped Event Folder and Remove it to save space
+    shutil.make_archive(os.path.join(event_folder), 'zip', os.path.join(event_folder))
+    shutil.rmtree(event_folder)
+def dogs_packets(supplier, host, feed_event_id, event_folder, chosen_directories, dates, username, password):
+    print("PAGH")
+    for index, value in enumerate(dates):
+        year = value[0:4]
+        month = value[5:7]
+        day = value[8:10]
+
+        for i in chosen_directories:
+            print(f"{i}/{year}/{month}/{day}.tgz")
+            universal_functions.download_filter_day(supplier, host, feed_event_id, f"{event_folder}/{day}.tgz", event_folder, f"{i}/{year}/{month}/{day}.tgz", username, password, day)
+    # Zipped Event Folder and Remove it to save space
+    shutil.make_archive(os.path.join(event_folder), 'zip', os.path.join(event_folder))
+    shutil.rmtree(event_folder)
+
+def betradar_packets(supplier, host, feed_event_id, event_folder, chosen_directories, dates, username, password):
+    print("Betradar")
+    for index, value in enumerate(dates):
+        year = value[0:4]
+        month = value[5:7]
+        day = value[8:10]
+
+        for i in chosen_directories:
+            print(i)
+            universal_functions.download_filter_day(supplier, host, feed_event_id, f"{event_folder}/{day}.tgz", event_folder, f"{i}/{year}/{month}/{day}.tgz", username, password, day)
+    # Zipped Event Folder and Remove it to save space
+    shutil.make_archive(os.path.join(event_folder), 'zip', os.path.join(event_folder))
+    shutil.rmtree(event_folder)
+
+def betradar_inplay_packets(supplier, host, feed_event_id, event_folder, chosen_directories, dates, username, password):
+    print("Betradar Inplay")
+    for index, value in enumerate(dates):
+        year = value[0:4]
+        month = value[5:7]
+        day = value[8:10]
+
+        for i in chosen_directories:
+            print(i)
+            universal_functions.download_filter_day(supplier, host, feed_event_id, f"{event_folder}/{day}.tgz", event_folder, f"{i}/{year}/{month}/{day}.tgz", username, password, day)
+    # Zipped Event Folder and Remove it to save space
+    shutil.make_archive(os.path.join(event_folder), 'zip', os.path.join(event_folder))
+    shutil.rmtree(event_folder)
+
+def sporting_solutions_packets(supplier, host, feed_event_id, event_folder, chosen_directories, dates, username, password):
+    print("SPORTING SOLUTIONS")
+    for index, value in enumerate(dates):
+        year = value[0:4]
+        month = value[5:7]
+        day = value[8:10]
+
+        for i in chosen_directories:
+            print(i)
+            universal_functions.download_filter_day(supplier, host, feed_event_id, f"{event_folder}/{day}.tgz", event_folder, f"{i}/{year}/{month}/{day}.tgz", username, password, day)
+    # Zipped Event Folder and Remove it to save space
+    shutil.make_archive(os.path.join(event_folder), 'zip', os.path.join(event_folder))
+    shutil.rmtree(event_folder)
+def sporting_solutions_inplay_packets(supplier, host, feed_event_id, event_folder, chosen_directories, dates, username, password):
+    print("SPORTING SOLUTIONS INPLAY")
+    for index, value in enumerate(dates):
+        year = value[0:4]
+        month = value[5:7]
+        day = value[8:10]
+
+        for i in chosen_directories:
+            print(i)
+            universal_functions.download_filter_day(supplier, host, feed_event_id, f"{event_folder}/{day}.tgz", event_folder, f"{i}/{year}/{month}/{day}.tgz", username, password, day)
+    # Zipped Event Folder and Remove it to save space
+    shutil.make_archive(os.path.join(event_folder), 'zip', os.path.join(event_folder))
+    shutil.rmtree(event_folder)
 def betgenius_inplay_packets(supplier, host, feed_event_id, event_folder, chosen_directories, dates, username, password):
     print("BETGENIUS INPLAY")
-def betgenius_inplay_sc_packets():
-    print("TEST")
+    for index, value in enumerate(dates):
+        year = value[0:4]
+        month = value[5:7]
+        day = value[8:10]
+
+        for i in chosen_directories:
+            print(f"{i}/{year}/{month}/{day}.tgz")
+            universal_functions.download_filter_day(supplier, host, feed_event_id, f"{event_folder}/{day}.tgz", event_folder, f"{i}/{year}/{month}/{day}.tgz", username, password, day)
+    
+    # Zipped Event Folder and Remove it to save space
+    shutil.make_archive(os.path.join(event_folder), 'zip', os.path.join(event_folder))
+    shutil.rmtree(event_folder)
 
 supplier_functions = [
     lsports_packets,
     sportsradar_packets,
-    [metric_packets, "eventId"],
+    metric_packets,
     at_the_races_packets,
     racing_uk_packets,
     spin_horse_racing_packets,
@@ -162,6 +238,5 @@ supplier_functions = [
     betradar_inplay_packets,
     sporting_solutions_packets,
     sporting_solutions_inplay_packets,
-    betgenius_inplay_packets,
-    betgenius_inplay_sc_packets
+    betgenius_inplay_packets
 ]
