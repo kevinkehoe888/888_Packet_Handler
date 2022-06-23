@@ -5,7 +5,7 @@ import os
 import paramiko
 import universal_functions
 import suppliers
-
+import time
 
 # How to build
 # pyinstaller --onefile --hidden-import babel.numbers --windowed 888_Packet_Handler.py
@@ -207,7 +207,7 @@ def date_disabler(supplier):
         if supplier == value[1]:
             supplier = index
             break
-    if supplier in (0, 1):
+    if supplier == 1:
         add_date_button["state"] = "disabled"
         delete_date_button["state"] = "disabled"
         for i in range(date_counter):
@@ -219,11 +219,18 @@ def date_disabler(supplier):
         delete_date_button["state"] = "disabled"
 
 def start_gathering_packets_details_functions(username, password):
+    startTime = time.time()
     for index, value in enumerate(events):
         event_folder = universal_functions.create_folders(value[2])
         chosen_directories = suppliers.choose_supplier_directories(value[0])
-        suppliers.supplier_functions[value[0]](value[0], value[1], value[3], event_folder, chosen_directories, value[4], username, password)
+        if value[0] == 1:
+            suppliers.supplier_functions[value[0]](value[0], value[1], value[3], event_folder, chosen_directories, username, password)
+        else:
+            suppliers.supplier_functions[value[0]](value[0], value[1], value[3], event_folder, chosen_directories, value[4], username, password)
         print("FINISHED")
+
+    executionTime = (time.time() - startTime)
+    print('Execution time in seconds: ' + str(executionTime))
         
   
 username_label = Label(root, text="Username")
