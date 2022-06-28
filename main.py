@@ -19,13 +19,9 @@ root.title("888 Packet Handler")
 root.geometry("1000x550")
 
 supplier_options = [
-  ["lsport", "LSports"], # todo
-  ["sportradar", "SportRadar"], # todo
+  ["lsport", "LSports"], # done
+  ["sportradar", "SportRadar"], # done
   ["METRIC", "Metric Gaming"], # done
-  ["AT_THE_RACES", "At The Races"],# remove
-  ["RACING_UK", "Racing UK"], # remove
-  ["SIS", "SPIN Horse Racing"], # remove
-  ["CMT", "CMT"], # remove
   ["PA", "Press Association"], # done
   ["PAGH", "Dogs"], # done
   ["BR", "BetRadar"], # done
@@ -105,7 +101,7 @@ def login_to_server(username, password, successful_login):
         #Loading Supplier Dropdown
         chosen_options_value = StringVar(root)
         chosen_options_value.set(supplier_options[2][1])
-        options = OptionMenu(root, chosen_options_value, supplier_options[0][1], supplier_options[1][1], supplier_options[2][1], supplier_options[3][1], supplier_options[4][1], supplier_options[5][1], supplier_options[6][1], supplier_options[7][1], supplier_options[8][1], supplier_options[9][1], supplier_options[10][1], supplier_options[11][1], supplier_options[12][1], supplier_options[13][1], command=lambda _:date_disabler(chosen_options_value.get()))
+        options = OptionMenu(root, chosen_options_value, supplier_options[0][1], supplier_options[1][1], supplier_options[2][1], supplier_options[3][1], supplier_options[4][1], supplier_options[5][1], supplier_options[6][1], supplier_options[7][1], supplier_options[8][1], supplier_options[9][1], command=lambda _:date_disabler(chosen_options_value.get()))
         options.place(x=485, y=13)
 
         # Loading Server Dropdown
