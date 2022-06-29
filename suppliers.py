@@ -7,6 +7,8 @@ import paramiko
 import json
 from bs4 import BeautifulSoup
 
+transferred, tobe_transferred = 0, 0
+
 supplier_remote_folders = [
     [
         "/mnt/feeds_data/fi_lsports_connector/markets_meta", 
@@ -95,7 +97,7 @@ def sportsradar_packets(supplier, host, feed_event_id, event_folder, chosen_dire
     shutil.make_archive(os.path.join(event_folder), 'zip', os.path.join(event_folder))
     shutil.rmtree(event_folder)
 
-def metric_packets(supplier, host, feed_event_id, event_folder, chosen_directories, dates, username, password):
+def metric_packets(supplier, host, feed_event_id, event_folder, chosen_directories, dates, username, password, progress):
     print("METRIC")
     for index, value in enumerate(dates):
         year = value[0:4]
@@ -157,6 +159,7 @@ def metric_packets(supplier, host, feed_event_id, event_folder, chosen_directori
     # Zipped Event Folder and Remove it to save space
     shutil.make_archive(os.path.join(event_folder), 'zip', os.path.join(event_folder))
     shutil.rmtree(event_folder)
+    universal_functions.update_progress_bar(progress, 33)
 
 def press_association_packets(supplier, host, feed_event_id, event_folder, chosen_directories, dates, username, password):
     print("PA")
@@ -285,7 +288,7 @@ def dogs_packets(supplier, host, feed_event_id, event_folder, chosen_directories
     shutil.make_archive(os.path.join(event_folder), 'zip', os.path.join(event_folder))
     shutil.rmtree(event_folder)
 
-def betradar_packets(supplier, host, feed_event_id, event_folder, chosen_directories, dates, username, password):
+def betradar_packets(supplier, host, feed_event_id, event_folder, chosen_directories, dates, username, password, progress):
     print("Betradar")
     for index, value in enumerate(dates):
         year = value[0:4]
@@ -337,8 +340,9 @@ def betradar_packets(supplier, host, feed_event_id, event_folder, chosen_directo
     # Zipped Event Folder and Remove it to save space
     shutil.make_archive(os.path.join(event_folder), 'zip', os.path.join(event_folder))
     shutil.rmtree(event_folder)
+    universal_functions.update_progress_bar(progress, 33)
 
-def betradar_inplay_packets(supplier, host, feed_event_id, event_folder, chosen_directories, dates, username, password):
+def betradar_inplay_packets(supplier, host, feed_event_id, event_folder, chosen_directories, dates, username, password, root):
     print("Betradar Inplay")
     for index, value in enumerate(dates):
         year = value[0:4]
@@ -350,13 +354,14 @@ def betradar_inplay_packets(supplier, host, feed_event_id, event_folder, chosen_
             ssh_client.load_host_keys(filename=os.path.expanduser('~/.ssh/known_hosts'))
             ssh_client.connect(hostname=host, username=username, password=password, key_filename=os.path.expanduser('~/.ssh/id_rsa'))
             ftp_client=ssh_client.open_sftp()
-            ftp_client.get(f"{i}/{year}/{month}/{day}.tgz", f"{event_folder}/{day}.tgz")
+            ftp_client.get(f"{i}/{year}/{month}/{day}.tgz", f"{event_folder}/{day}.tgz", callback=root.update())
             ftp_client.close()
 
             tar = tarfile.open(f"{event_folder}/{day}.tgz", "r:gz")
             # This list will be used to store any files that have been found with the pattern needed.
             files = []
             for index, member in enumerate(tar.getmembers()):
+                root.update()
                 f = tar.extractfile(member)
                 if f is not None:
                     if ".xml" in str(member):
@@ -373,6 +378,7 @@ def betradar_inplay_packets(supplier, host, feed_event_id, event_folder, chosen_
             tar.extractall(path = event_folder, members=files)
             tar.close()
 
+            root.update()
             if os.path.exists(f"{event_folder}/{day}"):
                 files_list = os.listdir(f"{event_folder}/{day}")
                 for files in files_list:
@@ -381,7 +387,7 @@ def betradar_inplay_packets(supplier, host, feed_event_id, event_folder, chosen_
                 os.remove(f"{event_folder}/{day}.tgz")
             else:
                 os.remove(f"{event_folder}/{day}.tgz")
-
+            root.update()
     # Zipped Event Folder and Remove it to save space
     shutil.make_archive(os.path.join(event_folder), 'zip', os.path.join(event_folder))
     shutil.rmtree(event_folder)
@@ -425,7 +431,7 @@ def sporting_solutions_packets(supplier, host, feed_event_id, event_folder, chos
     shutil.make_archive(os.path.join(event_folder), 'zip', os.path.join(event_folder))
     shutil.rmtree(event_folder)
 
-def sporting_solutions_inplay_packets(supplier, host, feed_event_id, event_folder, chosen_directories, dates, username, password):
+def sporting_solutions_inplay_packets(supplier, host, feed_event_id, event_folder, chosen_directories, dates, username, password, progress):
     print("SPORTING SOLUTIONS INPLAY")
     for index, value in enumerate(dates):
         year = value[0:4]
@@ -463,8 +469,9 @@ def sporting_solutions_inplay_packets(supplier, host, feed_event_id, event_folde
     # Zipped Event Folder and Remove it to save space
     shutil.make_archive(os.path.join(event_folder), 'zip', os.path.join(event_folder))
     shutil.rmtree(event_folder)
+    universal_functions.update_progress_bar(progress, 33)
     
-def betgenius_inplay_packets(supplier, host, feed_event_id, event_folder, chosen_directories, dates, username, password):
+def betgenius_inplay_packets(supplier, host, feed_event_id, event_folder, chosen_directories, dates, username, password, root, progress_label_string, progress_bar):
     print("BETGENIUS INPLAY")
     for index, value in enumerate(dates):
         year = value[0:4]
@@ -476,23 +483,26 @@ def betgenius_inplay_packets(supplier, host, feed_event_id, event_folder, chosen
             ssh_client.load_host_keys(filename=os.path.expanduser('~/.ssh/known_hosts'))
             ssh_client.connect(hostname=host, username=username, password=password, key_filename=os.path.expanduser('~/.ssh/id_rsa'))
             ftp_client=ssh_client.open_sftp()
-            ftp_client.get(f"{i}/{year}/{month}/{day}.tgz", f"{event_folder}/{day}.tgz")
+            ftp_client.get(f"{i}/{year}/{month}/{day}.tgz", f"{event_folder}/{day}.tgz", callback=lambda x, y: download_zip_progress(x, y, root, progress_label_string, progress_bar))
             ftp_client.close()
-
+            
             tar = tarfile.open(f"{event_folder}/{day}.tgz", "r:gz")
+            root.update()
             # This list will be used to store any files that have been found with the pattern needed.
             files = []
             for index, member in enumerate(tar.getmembers()):
+                zipped_files_checked_progress(index + 1, len(tar.getmembers()), root, progress_label_string, progress_bar, feed_event_id)
+                root.update()
                 f = tar.extractfile(member)
                 if f is not None:
                     pattern = re.search(str(feed_event_id), str(f.read()))
                     if pattern != None:
                         files.append(member)
                         print(member)
-
+                root.update()
             tar.extractall(path = event_folder, members=files)
             tar.close()
-
+            root.update()
             if os.path.exists(f"{event_folder}/{day}"):
                 files_list = os.listdir(f"{event_folder}/{day}")
                 for files in files_list:
@@ -501,10 +511,11 @@ def betgenius_inplay_packets(supplier, host, feed_event_id, event_folder, chosen
                 os.remove(f"{event_folder}/{day}.tgz")
             else:
                 os.remove(f"{event_folder}/{day}.tgz")
-
+            root.update()
     non_event_files = []
-    for i in os.listdir(event_folder):
-        print(i)
+    for num, i in enumerate(os.listdir(event_folder)):
+        verify_files_pulled(num + 1, len(os.listdir(event_folder)), root, progress_label_string, progress_bar)
+        root.update()
         if ".json" in str(i):
             f = open(f"{event_folder}/{i}")
             content = json.load(f)
@@ -555,14 +566,59 @@ def betgenius_inplay_packets(supplier, host, feed_event_id, event_folder, chosen
                 print("REMOVING XML FILE")
                 f.close()
                 non_event_files.append(str(i))
-
+    root.update()
     for files in non_event_files:
         print(f"REMOVING {files}")
         os.remove(os.path.join(event_folder, str(files)))
-
+    root.update()
     # Zipped Event Folder and Remove it to save space
     shutil.make_archive(os.path.join(event_folder), 'zip', os.path.join(event_folder))
     shutil.rmtree(event_folder)
+
+# Label Functions
+def download_zip_progress(x, y, root, progress_label_string, progress_bar):
+    if x > 0:
+        percentage = round(x / y * 100, 2)
+        print(percentage)
+        if percentage == 100.00:
+            progress_bar["value"] = 0
+            root.update()
+        else:
+            progress_label_string.set(f"Downloading zip file - Progress {percentage}%")
+            progress_bar["value"] = percentage
+            root.update()
+
+def zipped_files_checked_progress(x, y, root, progress_label_string, progress_bar, feed_event_id):
+    if x > 0:
+        percentage = round(x / y * 100, 2)
+        print(percentage)
+        if percentage == 100.00:
+            progress_bar["value"] = 0
+            root.update()
+        else:
+            progress_label_string.set(f"Checking files for feed_event_id {feed_event_id}. {percentage}% of files checked")
+            progress_bar["value"] = percentage
+            root.update()
+
+def verify_files_pulled(x, y, root, progress_label_string, progress_bar):
+    if x > 0:
+            percentage = round(x / y * 100, 2)
+            print(percentage)
+            if percentage == 100.00:
+                progress_label_string.set(f"All files have been checked and verified")
+                progress_bar["value"] = 0
+                root.update()
+            else:
+                progress_label_string.set(f"Verifying files pulled from zips. {percentage}% of files checked")
+                progress_bar["value"] = percentage
+                root.update()
+
+def events_finished(x, y, root, total_progress_label_string, total_progress_bar):
+    percentage = round(x / y * 100, 2)
+    total_progress_label_string.set(f"Total Progress: Event {x} of {y}")
+    total_progress_bar["value"] = percentage
+    root.update()
+
 
 supplier_functions = [
     lsports_packets,

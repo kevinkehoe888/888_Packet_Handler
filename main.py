@@ -1,6 +1,7 @@
-import threading
-from tkinter import *
+from tkinter import Tk, Button, StringVar, OptionMenu, Label, W, E, Entry, Canvas, Scrollbar, Frame, HORIZONTAL
+from tkinter.ttk import Progressbar
 from tkcalendar import DateEntry
+import threading
 import os
 import paramiko
 import universal_functions
@@ -14,9 +15,6 @@ known_host_servers, known_host_optionMenu, events = ["jump.spectateprod.com", "j
 date_labels, dates = {}, {}
 successful_login, date_counter, date_labels_y_pos = 0, 0, 0
 username_a, password_a = "", ""
-root = Tk()
-root.title("888 Packet Handler")
-root.geometry("1000x550")
 
 supplier_options = [
   ["lsport", "LSports"], # done
@@ -99,12 +97,14 @@ def login_to_server(username, password, successful_login):
         password_a = password
 
         #Loading Supplier Dropdown
+        global options
         chosen_options_value = StringVar(root)
         chosen_options_value.set(supplier_options[2][1])
         options = OptionMenu(root, chosen_options_value, supplier_options[0][1], supplier_options[1][1], supplier_options[2][1], supplier_options[3][1], supplier_options[4][1], supplier_options[5][1], supplier_options[6][1], supplier_options[7][1], supplier_options[8][1], supplier_options[9][1], command=lambda _:date_disabler(chosen_options_value.get()))
         options.place(x=485, y=13)
 
         # Loading Server Dropdown
+        global server_options
         chosen_server_value = StringVar(root)
         chosen_server_value.set(known_host_optionMenu[0])
         server_options = OptionMenu(root, chosen_server_value, *known_host_optionMenu)
@@ -193,6 +193,11 @@ def add_event_details_function(event_id, feed_event_id, dates):
             temp_dates.append(str(value.get_date()))
         events.append([supplier, server, event_id, feed_event_id, temp_dates])
 
+    event_id_input.delete(0, "end")
+    feed_event_id_input.delete(0, "end")
+    for i in range(date_counter):
+        delete_date_function()
+
     if events:
         start_gathering_packets_details["state"] = "normal"
     print(events)
@@ -214,20 +219,44 @@ def date_disabler(supplier):
         add_date_button["state"] = "normal"
         delete_date_button["state"] = "disabled"
 
-def start_gathering_packets_details_functions(username, password):
+def start_gathering_packets_details_functions(username, password, root, progress_label_string, progress_bar, total_progress_label_string, total_progress_bar):
+    options["state"] = "disabled"
+    event_id_input["state"] = "disabled"
+    feed_event_id_input["state"] = "disabled"
+    add_date_button["state"] = "disabled"
+    delete_date_button["state"] = "disabled"
+    add_event_details["state"] = "disabled"
+    start_gathering_packets_details["state"] = "disabled"
+    server_options["state"] = "disabled"
     startTime = time.time()
     for index, value in enumerate(events):
+        total_progress_label_string.set(f"Total Progress: Event {index+1} of {len(events)}")
         event_folder = universal_functions.create_folders(value[2])
         chosen_directories = suppliers.choose_supplier_directories(value[0])
         if value[0] == 1:
-            suppliers.supplier_functions[value[0]](value[0], value[1], value[3], event_folder, chosen_directories, username, password)
+            suppliers.supplier_functions[value[0]](value[0], value[1], value[3], event_folder, chosen_directories, username, password)     
         else:
-            suppliers.supplier_functions[value[0]](value[0], value[1], value[3], event_folder, chosen_directories, value[4], username, password)
-        print("FINISHED")
-
+            suppliers.supplier_functions[value[0]](value[0], value[1], value[3], event_folder, chosen_directories, value[4], username, password, root, progress_label_string, progress_bar)
+        suppliers.events_finished(index + 1, len(events), root, total_progress_label_string, total_progress_bar)
+        
     executionTime = (time.time() - startTime)
     print('Execution time in seconds: ' + str(executionTime))
-        
+
+    events.clear()
+
+    options["state"] = "normal"
+    event_id_input["state"] = "normal"
+    feed_event_id_input["state"] = "normal"
+    chosen_options_value.set(supplier_options[2][1])
+    add_date_button["state"] = "normal"
+    delete_date_button["state"] = "disabled"
+    add_event_details["state"] = "normal"
+    start_gathering_packets_details["state"] = "disabled"
+    server_options["state"] = "normal"
+
+root = Tk()
+root.title("888 Packet Handler")
+root.geometry("1000x550")   
   
 username_label = Label(root, text="Username")
 username_label.place(x=30,y=30)
@@ -272,7 +301,7 @@ add_event_details = Button(root, text="Add Event", command=lambda:add_event_deta
 add_event_details["state"] = "disabled"
 add_event_details.place(x=630,y=110)
 
-start_gathering_packets_details = Button(root, text="Start Packet Gathering", command=lambda:threading.Thread(target=start_gathering_packets_details_functions(username_a, password_a)).start())
+start_gathering_packets_details = Button(root, text="Start Packet Gathering", command=lambda:threading.Thread(target=start_gathering_packets_details_functions(username_a, password_a, root, progress_label_string, progress_bar, total_progress_label_string, total_progress_bar)).start())
 start_gathering_packets_details["state"] = "disabled"
 start_gathering_packets_details.place(x=720, y=110)
 
@@ -291,4 +320,21 @@ date_canvas_scroll_y.pack(fill='y', side='right')
 date_canvas_scroll_y.place(in_=date_canvas, relx=1.0, relheight=1.0, bordermode="outside")
 date_canvas.place(x=420, y=150)
 
+progress_label_string = StringVar()
+progress_label_string.set("")
+
+progress_label = Label(root, textvariable=progress_label_string)
+progress_label.place(x=450, y=420)
+
+progress_bar = Progressbar(root, orient=HORIZONTAL, length=900, mode='determinate')
+progress_bar.place(x=50, y=450)
+
+total_progress_label_string = StringVar()
+total_progress_label_string.set("")
+
+total_progress_label = Label(root, textvariable=total_progress_label_string)
+total_progress_label.place(x=450, y=480)
+
+total_progress_bar = Progressbar(root, orient=HORIZONTAL, length=900, mode='determinate')
+total_progress_bar.place(x=50, y=510)
 root.mainloop()
