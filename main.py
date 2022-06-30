@@ -1,17 +1,18 @@
-from tkinter import Tk, Button, StringVar, OptionMenu, Label, W, E, Entry, Canvas, Scrollbar, Frame, HORIZONTAL
+from tkinter import Tk, Button, StringVar, OptionMenu, Label, W, E, Entry, Canvas, Scrollbar, Frame, HORIZONTAL, Toplevel
 from tkinter.ttk import Progressbar
 from tkcalendar import DateEntry
 import threading
 import os
 import paramiko
 import universal_functions
+import supplier_folders
 import suppliers
-import time
 
 # How to build
 # pyinstaller --onefile --hidden-import babel.numbers --windowed 888_Packet_Handler.py
+# pyinstaller --onefile --hidden-import babel.numbers --windowed main.py suppliers.py universal_functions.py supplier_folders.py
 
-known_host_servers, known_host_optionMenu, events = ["jump.spectateprod.com", "jump.spectateprodusa.com", "jump.spectatemirage.com"], ["PROD", "PRODUSA", "MIRAGE"], []
+known_host_servers, known_host_optionMenu, events = [], [], []
 date_labels, dates = {}, {}
 successful_login, date_counter, date_labels_y_pos = 0, 0, 0
 username_a, password_a = "", ""
@@ -228,19 +229,15 @@ def start_gathering_packets_details_functions(username, password, root, progress
     add_event_details["state"] = "disabled"
     start_gathering_packets_details["state"] = "disabled"
     server_options["state"] = "disabled"
-    startTime = time.time()
     for index, value in enumerate(events):
         total_progress_label_string.set(f"Total Progress: Event {index+1} of {len(events)}")
         event_folder = universal_functions.create_folders(value[2])
-        chosen_directories = suppliers.choose_supplier_directories(value[0])
+        chosen_directories = supplier_folders.choose_supplier_directories(value[0])
         if value[0] == 1:
-            suppliers.supplier_functions[value[0]](value[0], value[1], value[3], event_folder, chosen_directories, username, password)     
+            suppliers.supplier_functions[value[0]](value[0], value[1], value[3], event_folder, chosen_directories, username, password, root, progress_label_string, progress_bar)     
         else:
             suppliers.supplier_functions[value[0]](value[0], value[1], value[3], event_folder, chosen_directories, value[4], username, password, root, progress_label_string, progress_bar)
-        suppliers.events_finished(index + 1, len(events), root, total_progress_label_string, total_progress_bar)
-        
-    executionTime = (time.time() - startTime)
-    print('Execution time in seconds: ' + str(executionTime))
+        universal_functions.events_finished(index + 1, len(events), root, total_progress_label_string, total_progress_bar)
 
     events.clear()
 
@@ -253,6 +250,15 @@ def start_gathering_packets_details_functions(username, password, root, progress
     add_event_details["state"] = "normal"
     start_gathering_packets_details["state"] = "disabled"
     server_options["state"] = "normal"
+    progress_label_string.set("")
+    progress_bar["value"] = 0
+    total_progress_label_string.set("")
+    total_progress_bar["value"] = 0
+    # Popup to let people know all packets have been gathered
+    newWindow = Toplevel(root)
+    newWindow.title("888 Packet Handler")
+    newWindow.geometry("600x85")
+    Label(newWindow, text =f"Event(s) have been gathered.\nThanks for using the 888 Packet Handler.",font=("Arial", 20)).pack()
 
 root = Tk()
 root.title("888 Packet Handler")
@@ -320,21 +326,27 @@ date_canvas_scroll_y.pack(fill='y', side='right')
 date_canvas_scroll_y.place(in_=date_canvas, relx=1.0, relheight=1.0, bordermode="outside")
 date_canvas.place(x=420, y=150)
 
+# Event Progress String
 progress_label_string = StringVar()
 progress_label_string.set("")
 
+# Event Progress Label
 progress_label = Label(root, textvariable=progress_label_string)
-progress_label.place(x=450, y=420)
+progress_label.place(x=400, y=420)
 
+# Event Progress Bar
 progress_bar = Progressbar(root, orient=HORIZONTAL, length=900, mode='determinate')
 progress_bar.place(x=50, y=450)
 
+# Total Progress String
 total_progress_label_string = StringVar()
 total_progress_label_string.set("")
 
+# Total Progress Label
 total_progress_label = Label(root, textvariable=total_progress_label_string)
-total_progress_label.place(x=450, y=480)
+total_progress_label.place(x=400, y=480)
 
+# Total Progress Bar
 total_progress_bar = Progressbar(root, orient=HORIZONTAL, length=900, mode='determinate')
 total_progress_bar.place(x=50, y=510)
 root.mainloop()
