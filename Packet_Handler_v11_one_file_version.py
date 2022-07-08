@@ -17,7 +17,7 @@ import time
 known_host_servers, known_host_optionMenu, events = [], [], []
 date_labels, dates = {}, {}
 username, password = "", ""
-date_counter, date_labels_y_pos, event_counter = 0, 0, 0
+date_counter, date_labels_y_pos, event_counter, total_progress_value= 0, 0, 0, 0
 
 supplier_options = [
   ["lsport", "LSports"],
@@ -238,8 +238,6 @@ def add_event_details_function():
             print(f"{supplier} is at index {index}")
             supplier = index
             break
-
-    # Date Verification
     
     for index, value in enumerate(known_host_optionMenu):
         if servername == value:
@@ -276,6 +274,7 @@ def add_event_details_function():
         Label(newWindow, text=f"Event {eventid} has been successfully added", font=("Arial", 20)).pack()
 
 def start_gathering_packets_details_functions():
+    global total_progress_value
     options["state"] = "disabled"
     event_id_input["state"] = "disabled"
     feed_event_id_input["state"] = "disabled"
@@ -291,6 +290,7 @@ def start_gathering_packets_details_functions():
         chosen_directories = supplier_folders.choose_supplier_directories(value[0])
         # Downloading files and pulling files with feed event id
         if value[0] == 0:
+            temp_value = total_progress_bar["value"]
             for index, format in enumerate(value[4]):
                 year = format[0:4]
                 month = format[5:7]
@@ -303,23 +303,27 @@ def start_gathering_packets_details_functions():
                 ftp_client=ssh_client.open_sftp()
                 try:
                     print("Try first folder structure")
-                    for filename in ftp_client.listdir(folder_one_verify):
-                        ftp_client.get(f"{folder_one_verify}/{filename}", os.path.join(event_folder, filename), callback=download_files_progress)
+                    for index, filename in enumerate(ftp_client.listdir(folder_one_verify)):
+                        ftp_client.get(f"{folder_one_verify}/{filename}", os.path.join(event_folder, filename))
+                        label_message(f"Downloading files from {folder_one_verify}. Progress - {round((index + 1) / len(ftp_client.listdir(folder_one_verify)) * 100, 2)}%", 260 , 420, round((index + 1) / len(ftp_client.listdir(folder_one_verify)) * 100, 2))
+                        total_progress_bar["value"] = (round((index + 1) / len(ftp_client.listdir(folder_one_verify)) * 20, 2) / len(events)) + temp_value
                 except FileNotFoundError:
                     print("First folder structure failed - Trying second structure.")
                     try:
-                        for filename in ftp_client.listdir(folder_two_verify):
-                            ftp_client.get(f"{folder_two_verify}/{filename}", os.path.join(event_folder, filename), callback=download_files_progress)
+                        for index, filename in enumerate(ftp_client.listdir(folder_two_verify)):
+                            ftp_client.get(f"{folder_two_verify}/{filename}", os.path.join(event_folder, filename))
+                            label_message(f"Downloading files from {folder_two_verify}. Progress - {round((index + 1) / len(ftp_client.listdir(folder_two_verify)) * 100, 2)}%", 260 , 420, round((index + 1) / len(ftp_client.listdir(folder_two_verify)) * 100, 2))
+                            total_progress_bar["value"] = (round((index + 1) / len(ftp_client.listdir(folder_two_verify)) * 20, 2) / len(events)) + temp_value
                     except FileNotFoundError:
                         print("Folder does not exist - please double check the event")
-
+                    
                 if len(value[3]) > 7:
                     value[3] = value[3][0:7]
 
-                for i in chosen_directories:
-                    for filename in ftp_client.listdir(i):
-                        print(f"Checking {filename}")
-                        ftp_client.get(f"{i}/{filename}", os.path.join(event_folder, filename), callback=verify_files_pulled)
+                temp_value = total_progress_bar["value"]
+                for number, i in enumerate(chosen_directories):
+                    for index, filename in enumerate(ftp_client.listdir(i)):
+                        ftp_client.get(f"{i}/{filename}", os.path.join(event_folder, filename))
                         opened_file = open(os.path.join(event_folder, filename), "r")
                         read_opened_file = opened_file.read()
                         pattern = re.search(str('"FixtureId":' + " " + value[3]), str(read_opened_file))
@@ -329,7 +333,11 @@ def start_gathering_packets_details_functions():
                         else:
                             read_opened_file = opened_file.close()
                             os.remove(os.path.join(event_folder, filename))
+                        label_message(f"Checking files from {i} for the Feed Event ID {value[3]}. Progress - {round((index + 1) / len(ftp_client.listdir(i)) * 100, 2)}%", 200 , 420, round((index + 1) / len(ftp_client.listdir(i)) * 100, 2)) 
+                        total_progress_bar["value"] = (round((index + 1) / len(ftp_client.listdir(i)) * 20, 2) / len(events)) + temp_value
+                    temp_value = total_progress_bar["value"]
         elif value[0] == 1:
+            temp_value = total_progress_bar["value"]
             feed_event_id_folder = f"sr_match{value[3][-8:]}"
             ssh_client=paramiko.SSHClient()
             ssh_client.load_host_keys(filename=os.path.expanduser('~/.ssh/known_hosts'))
@@ -337,8 +345,11 @@ def start_gathering_packets_details_functions():
             ftp_client=ssh_client.open_sftp()
             for i in chosen_directories:
                 try:
-                    for filename in ftp_client.listdir(f"{i}/{feed_event_id_folder}"):
-                        ftp_client.get(f"{i}/{feed_event_id_folder}/{filename}", os.path.join(event_folder, filename), callback=download_files_progress)
+                    for index, filename in enumerate(ftp_client.listdir(f"{i}/{feed_event_id_folder}")):
+                        ftp_client.get(f"{i}/{feed_event_id_folder}/{filename}", os.path.join(event_folder, filename))
+                        label_message(f"Downloading files from {i}/{feed_event_id_folder}. Progress - {round((index + 1) / len(ftp_client.listdir(f'{i}/{feed_event_id_folder}')) * 100, 2)}%", 230 , 420, round((index + 1) / len(ftp_client.listdir(f"{i}/{feed_event_id_folder}")) * 100, 2))
+                        total_progress_bar["value"] = (round((index + 1) / len(ftp_client.listdir(f'{i}/{feed_event_id_folder}')) * 100, 2) / len(events)) + temp_value
+                    temp_value = total_progress_bar["value"]
                     break    
                 except IOError:
                     print("Remote Folder not in this directory")
@@ -347,30 +358,30 @@ def start_gathering_packets_details_functions():
                 year = format[0:4]
                 month = format[5:7]
                 day = format[8:10]
-                print(year, month, day)
                 for i in chosen_directories:
                     ssh_client=paramiko.SSHClient()
                     ssh_client.load_host_keys(filename=os.path.expanduser('~/.ssh/known_hosts'))
                     ssh_client.connect(hostname=value[1], username=username, password=password, key_filename=os.path.expanduser('~/.ssh/id_rsa'))
                     ftp_client=ssh_client.open_sftp()
                     if str(format) == str(date.today()):
-                        for filename in ftp_client.listdir(f"{i}/{year}/{month}/{day}"):
-                            ftp_client.get(f"{i}/{year}/{month}/{day}/{filename}", os.path.join(event_folder, filename), callback=download_files_progress)
+                        for index, filename in enumerate(ftp_client.listdir(f"{i}/{year}/{month}/{day}")):
+                            ftp_client.get(f"{i}/{year}/{month}/{day}/{filename}", os.path.join(event_folder, filename))
+                            label_message(f"Downloading files from {i}/{year}/{month}/{day}. Progress - {round((index + 1) / len(ftp_client.listdir(f'{i}/{year}/{month}/{day}')) * 100, 2)}%", 230 , 420, round((index + 1) / len(ftp_client.listdir(f"{i}/{year}/{month}/{day}")) * 100, 2))
                     else:
-                        ftp_client.get(f"{i}/{year}/{month}/{day}.tgz", f"{event_folder}/{day}.tgz", callback=download_zip_progress)
+                        ftp_client.get(f"{i}/{year}/{month}/{day}.tgz", f"{event_folder}/{day}.tgz", callback=lambda x, y : download_zip_progress(x, y, f"Downloading zip file {i}/{year}/{month}/{day}.tgz. Progress - {round(x / y * 100, 2)}%", 230, 420, round(x / y * 100, 2)))
                         ftp_client.close()
 
                         tar = tarfile.open(f"{event_folder}/{day}.tgz", "r:gz")
                         # This list will be used to store any files that have been found with the pattern needed.
                         files = []
                         for index, member in enumerate(tar.getmembers()):
-                            zipped_files_checked_progress(index + 1, len(tar.getmembers()), value[3])
                             f = tar.extractfile(member)
                             if f is not None:
                                 pattern = re.search(str(value[3]), str(f.read()))
                                 if pattern != None:
                                     files.append(member)
-                            root.update()
+                            label_message(f"Searching zip folder {day}.tgz for the Feed Event ID {value[3]}. Progress - {round((index + 1) / len(tar.getmembers()) * 100, 2)}%", 310 , 420, round((index + 1) / len(tar.getmembers()) * 100, 2))
+
                         tar.extractall(path = event_folder, members=files)
                         tar.close()
 
@@ -394,23 +405,23 @@ def start_gathering_packets_details_functions():
                     ssh_client.connect(hostname=value[1], username=username, password=password, key_filename=os.path.expanduser('~/.ssh/id_rsa'))
                     ftp_client=ssh_client.open_sftp()
                     if str(format) == str(date.today()):
-                        for filename in ftp_client.listdir(f"{i}/{year}/{month}/{day}"):
-                            ftp_client.get(f"{i}/{year}/{month}/{day}/{filename}", os.path.join(event_folder, filename), callback=download_files_progress)
+                        for index, filename in enumerate(ftp_client.listdir(f"{i}/{year}/{month}/{day}")):
+                            ftp_client.get(f"{i}/{year}/{month}/{day}/{filename}", os.path.join(event_folder, filename))
+                            label_message(f"Downloading files from {i}/{year}/{month}/{day}. Progress - {round((index + 1) / len(ftp_client.listdir(f'{i}/{year}/{month}/{day}')) * 100, 2)}%", 230 , 420, round((index + 1) / len(ftp_client.listdir(f"{i}/{year}/{month}/{day}")) * 100, 2))
                     else:     
-                        ftp_client.get(f"{i}/{year}/{month}/{day}.tgz", f"{event_folder}/{day}.tgz", callback=download_zip_progress)
+                        ftp_client.get(f"{i}/{year}/{month}/{day}.tgz", f"{event_folder}/{day}.tgz", callback=lambda x, y : download_zip_progress(x, y, f"Downloading zip file {i}/{year}/{month}/{day}.tgz. Progress - {round(x / y * 100, 2)}%", 230, 420, round(x / y * 100, 2)))
                         ftp_client.close()
 
                         tar = tarfile.open(f"{event_folder}/{day}.tgz", "r:gz")
                         # This list will be used to store any files that have been found with the pattern needed.
                         files = []
                         for index, member in enumerate(tar.getmembers()):
-                            zipped_files_checked_progress(index + 1, len(tar.getmembers()), value[3])
                             f = tar.extractfile(member)
                             if f is not None:
                                 pattern = re.search(str(value[3]), str(f.read()))
                                 if pattern != None:
                                     files.append(member)
-                            root.update()
+                            label_message(f"Searching zip folder {day}.tgz for the Feed Event ID {value[3]}. Progress - {round((index + 1) / len(tar.getmembers()) * 100, 2)}%", 310 , 420, round((index + 1) / len(tar.getmembers()) * 100, 2))
                         tar.extractall(path = event_folder, members=files)
                         tar.close()
 
@@ -427,7 +438,6 @@ def start_gathering_packets_details_functions():
                 year = format[0:4]
                 month = format[5:7]
                 day = format[8:10]
-                print(year, month, day)
                 for i in chosen_directories:
                     ssh_client=paramiko.SSHClient()
                     ssh_client.load_host_keys(filename=os.path.expanduser('~/.ssh/known_hosts'))
@@ -435,8 +445,9 @@ def start_gathering_packets_details_functions():
                     ftp_client=ssh_client.open_sftp()
                     if str(format) == str(date.today()):
                         non_event_files = []
-                        for filename in ftp_client.listdir(f"{i}/{year}/{month}/{day}"):
-                            ftp_client.get(f"{i}/{year}/{month}/{day}/{filename}", os.path.join(event_folder, filename), callback=download_files_progress)
+                        for index, filename in enumerate(ftp_client.listdir(f"{i}/{year}/{month}/{day}")):
+                            ftp_client.get(f"{i}/{year}/{month}/{day}/{filename}", os.path.join(event_folder, filename))
+                            label_message(f"Downloading files from {i}/{year}/{month}/{day}. Progress - {round((index + 1) / len(ftp_client.listdir(f'{i}/{year}/{month}/{day}')) * 100, 2)}%", 230 , 420, round((index + 1) / len(ftp_client.listdir(f"{i}/{year}/{month}/{day}")) * 100, 2))
                         for num, i in enumerate(os.listdir(event_folder)):
                             if ".xml" in str(i):
                                     f = open(f"{event_folder}/{i}")
@@ -459,18 +470,18 @@ def start_gathering_packets_details_functions():
                                         continue
                                     else:
                                         non_event_files.append(str(i))
+                            label_message(f"Checking files from {event_folder} for the Feed Event ID {value[3]}. Progress - {round((num + 1) / len(os.listdir(event_folder)) * 100, 2)}%", 200 , 420, round((num + 1) / len(os.listdir(event_folder)) * 100, 2))
                         for files in non_event_files:
                             print(f"REMOVING {files}")
                             os.remove(os.path.join(event_folder, str(files)))                    
                     else:
-                        ftp_client.get(f"{i}/{year}/{month}/{day}.tgz", f"{event_folder}/{day}.tgz", callback=download_zip_progress)
+                        ftp_client.get(f"{i}/{year}/{month}/{day}.tgz", f"{event_folder}/{day}.tgz", callback=lambda x, y : download_zip_progress(x, y, f"Downloading zip file {i}/{year}/{month}/{day}.tgz. Progress - {round(x / y * 100, 2)}%", 230, 420, round(x / y * 100, 2)))
                         ftp_client.close()
 
                         tar = tarfile.open(f"{event_folder}/{day}.tgz", "r:gz")
                         # This list will be used to store any files that have been found with the pattern needed.
                         files = []
                         for index, member in enumerate(tar.getmembers()):
-                            zipped_files_checked_progress(index + 1, len(tar.getmembers()), value[3])
                             f = tar.extractfile(member)
                             if f is not None:
                                 if ".xml" in str(member):
@@ -491,6 +502,7 @@ def start_gathering_packets_details_functions():
 
                                     if raceNumber_match == True:
                                         files.append(member)
+                                label_message(f"Searching zip folder {day}.tgz for the Feed Event ID {value[3]}. Progress - {round((index + 1) / len(tar.getmembers()) * 100, 2)}%", 310 , 420, round((index + 1) / len(tar.getmembers()) * 100, 2))
 
                         tar.extractall(path = event_folder, members=files)
                         tar.close()
@@ -508,20 +520,18 @@ def start_gathering_packets_details_functions():
                 year = format[0:4]
                 month = format[5:7]
                 day = format[8:10]
-                print(year, month, day)
                 for i in chosen_directories:
                     ssh_client=paramiko.SSHClient()
                     ssh_client.load_host_keys(filename=os.path.expanduser('~/.ssh/known_hosts'))
                     ssh_client.connect(hostname=value[1], username=username, password=password, key_filename=os.path.expanduser('~/.ssh/id_rsa'))
                     ftp_client=ssh_client.open_sftp()
-                    ftp_client.get(f"{i}/{year}/{month}/{day}.tgz", f"{event_folder}/{day}.tgz", callback=download_zip_progress)
+                    ftp_client.get(f"{i}/{year}/{month}/{day}.tgz", f"{event_folder}/{day}.tgz", callback=lambda x, y : download_zip_progress(x, y, f"Downloading zip file {i}/{year}/{month}/{day}.tgz. Progress - {round(x / y * 100, 2)}%", 230, 420, round(x / y * 100, 2)))
                     ftp_client.close()
 
                     tar = tarfile.open(f"{event_folder}/{day}.tgz", "r:gz")
                     # This list will be used to store any files that have been found with the pattern needed.
                     files = []
                     for index, member in enumerate(tar.getmembers()):
-                        zipped_files_checked_progress(index + 1, len(tar.getmembers()), value[3])
                         f = tar.extractfile(member)
                         if f is not None:
                             if ".xml" in str(member):
@@ -534,7 +544,7 @@ def start_gathering_packets_details_functions():
                                         break
                                 if BetradarMatchID_match == True:
                                     files.append(member)
-
+                            label_message(f"Searching zip folder {day}.tgz for the Feed Event ID {value[3]}. Progress - {round((index + 1) / len(tar.getmembers()) * 100, 2)}%", 310 , 420, round((index + 1) / len(tar.getmembers()) * 100, 2))
                     tar.extractall(path = event_folder, members=files)
                     tar.close()
 
@@ -551,20 +561,18 @@ def start_gathering_packets_details_functions():
                 year = format[0:4]
                 month = format[5:7]
                 day = format[8:10]
-                print(year, month, day)
                 for i in chosen_directories:
                     ssh_client=paramiko.SSHClient()
                     ssh_client.load_host_keys(filename=os.path.expanduser('~/.ssh/known_hosts'))
                     ssh_client.connect(hostname=value[1], username=username, password=password, key_filename=os.path.expanduser('~/.ssh/id_rsa'))
                     ftp_client=ssh_client.open_sftp()
-                    ftp_client.get(f"{i}/{year}/{month}/{day}.tgz", f"{event_folder}/{day}.tgz", callback=download_zip_progress)
+                    ftp_client.get(f"{i}/{year}/{month}/{day}.tgz", f"{event_folder}/{day}.tgz", callback=lambda x, y : download_zip_progress(x, y, f"Downloading zip file {i}/{year}/{month}/{day}.tgz. Progress - {round(x / y * 100, 2)}%", 230, 420, round(x / y * 100, 2)))
                     ftp_client.close()
 
                     tar = tarfile.open(f"{event_folder}/{day}.tgz", "r:gz")
                     # This list will be used to store any files that have been found with the pattern needed.
                     files = []
                     for index, member in enumerate(tar.getmembers()):
-                        zipped_files_checked_progress(index + 1, len(tar.getmembers()), value[3])
                         f = tar.extractfile(member)
                         if f is not None:
                             if ".xml" in str(member):
@@ -577,7 +585,7 @@ def start_gathering_packets_details_functions():
                                         break
                                 if BetradarMatchID_match == True:
                                     files.append(member)
-
+                            label_message(f"Searching zip folder {day}.tgz for the Feed Event ID {value[3]}. Progress - {round((index + 1) / len(tar.getmembers()) * 100, 2)}%", 310 , 420, round((index + 1) / len(tar.getmembers()) * 100, 2))
                     tar.extractall(path = event_folder, members=files)
                     tar.close()
 
@@ -594,100 +602,90 @@ def start_gathering_packets_details_functions():
                 year = format[0:4]
                 month = format[5:7]
                 day = format[8:10]
-                print(year, month, day)
                 for i in chosen_directories:
                     ssh_client=paramiko.SSHClient()
                     ssh_client.load_host_keys(filename=os.path.expanduser('~/.ssh/known_hosts'))
                     ssh_client.connect(hostname=value[1], username=username, password=password, key_filename=os.path.expanduser('~/.ssh/id_rsa'))
                     ftp_client=ssh_client.open_sftp()
-                    ftp_client.get(f"{i}/{year}/{month}/{day}.tgz", f"{event_folder}/{day}.tgz", callback=download_zip_progress)
+                    ftp_client.get(f"{i}/{year}/{month}/{day}.tgz", f"{event_folder}/{day}.tgz", callback=lambda x, y : download_zip_progress(x, y, f"Downloading zip file {i}/{year}/{month}/{day}.tgz. Progress - {round(x / y * 100, 2)}%", 230, 420, round(x / y * 100, 2)))
                     ftp_client.close()
 
                     tar = tarfile.open(f"{event_folder}/{day}.tgz", "r:gz")
                     # This list will be used to store any files that have been found with the pattern needed.
                     files = []
                     for index, member in enumerate(tar.getmembers()):
-                        zipped_files_checked_progress(index + 1, len(tar.getmembers()), value[3])
                         f = tar.extractfile(member)
                         if f is not None:
                             if ".json" in str(member):
                                 if value[3] in str(member):
                                     print("MATCHING JSON FILE")
                                     files.append(member)
+                            label_message(f"Searching zip folder {day}.tgz for the Feed Event ID {value[3]}. Progress - {round((index + 1) / len(tar.getmembers()) * 100, 2)}%", 310 , 420, round((index + 1) / len(tar.getmembers()) * 100, 2))
 
                     tar.extractall(path = event_folder, members=files)
                     tar.close()
 
-                    if os.path.exists(f"{event_folder}/{day}"):
-                        files_list = os.listdir(f"{event_folder}/{day}")
-                        for files in files_list:
-                            shutil.move(os.path.join(f"{event_folder}/{day}", files), os.path.join(event_folder, files))
-                        shutil.rmtree(f"{event_folder}/{day}")
-                        os.remove(f"{event_folder}/{day}.tgz")
-                    else:
-                        os.remove(f"{event_folder}/{day}.tgz")
+                    for path, subdirs, files in os.walk(f"{event_folder}"):
+                        for name in files:
+                            shutil.move(os.path.join(path, name), os.path.join(event_folder, name))
+                    shutil.rmtree(f"{event_folder}/{day}")
+                    os.remove(f"{event_folder}/{day}.tgz")
         elif value[0] == 8:
             for index, format in enumerate(value[4]):
                 year = format[0:4]
                 month = format[5:7]
                 day = format[8:10]
-                print(year, month, day)
                 for i in chosen_directories:
                     ssh_client=paramiko.SSHClient()
                     ssh_client.load_host_keys(filename=os.path.expanduser('~/.ssh/known_hosts'))
                     ssh_client.connect(hostname=value[1], username=username, password=password, key_filename=os.path.expanduser('~/.ssh/id_rsa'))
                     ftp_client=ssh_client.open_sftp()
-                    ftp_client.get(f"{i}/{year}/{month}/{day}.tgz", f"{event_folder}/{day}.tgz", callback=download_zip_progress)
+                    ftp_client.get(f"{i}/{year}/{month}/{day}.tgz", f"{event_folder}/{day}.tgz", callback=lambda x, y : download_zip_progress(x, y, f"Downloading zip file {i}/{year}/{month}/{day}.tgz. Progress - {round(x / y * 100, 2)}%", 230, 420, round(x / y * 100, 2)))
                     ftp_client.close()
 
                     tar = tarfile.open(f"{event_folder}/{day}.tgz", "r:gz")
                     # This list will be used to store any files that have been found with the pattern needed.
                     files = []
                     for index, member in enumerate(tar.getmembers()):
-                        zipped_files_checked_progress(index + 1, len(tar.getmembers()), value[3])
                         f = tar.extractfile(member)
                         if f is not None:
                             if ".json" in str(member):
                                 if value[3] in str(member):
                                     print("MATCHING JSON FILE")
                                     files.append(member)
+                            label_message(f"Searching zip folder {day}.tgz for the Feed Event ID {value[3]}. Progress - {round((index + 1) / len(tar.getmembers()) * 100, 2)}%", 310 , 420, round((index + 1) / len(tar.getmembers()) * 100, 2))
 
                     tar.extractall(path = event_folder, members=files)
                     tar.close()
 
-                    if os.path.exists(f"{event_folder}/{day}"):
-                        files_list = os.listdir(f"{event_folder}/{day}")
-                        for files in files_list:
-                            shutil.move(os.path.join(f"{event_folder}/{day}", files), os.path.join(event_folder, files))
-                        shutil.rmtree(f"{event_folder}/{day}")
-                        os.remove(f"{event_folder}/{day}.tgz")
-                    else:
-                        os.remove(f"{event_folder}/{day}.tgz")
+                    for path, subdirs, files in os.walk(f"{event_folder}"):
+                        for name in files:
+                            shutil.move(os.path.join(path, name), os.path.join(event_folder, name))
+                    shutil.rmtree(f"{event_folder}/{day}")
+                    os.remove(f"{event_folder}/{day}.tgz")
         elif value[0] == 9:
             for index, format in enumerate(value[4]):
                 year = format[0:4]
                 month = format[5:7]
                 day = format[8:10]
-                print(year, month, day)
                 for i in chosen_directories:
                     ssh_client=paramiko.SSHClient()
                     ssh_client.load_host_keys(filename=os.path.expanduser('~/.ssh/known_hosts'))
                     ssh_client.connect(hostname=value[1], username=username, password=password, key_filename=os.path.expanduser('~/.ssh/id_rsa'))
                     ftp_client=ssh_client.open_sftp()
-                    ftp_client.get(f"{i}/{year}/{month}/{day}.tgz", f"{event_folder}/{day}.tgz", callback=download_zip_progress)
+                    ftp_client.get(f"{i}/{year}/{month}/{day}.tgz", f"{event_folder}/{day}.tgz", callback=lambda x, y : download_zip_progress(x, y, f"Downloading zip file {i}/{year}/{month}/{day}.tgz. Progress - {round(x / y * 100, 2)}%", 230, 420, round(x / y * 100, 2)))
                     ftp_client.close()
 
                     tar = tarfile.open(f"{event_folder}/{day}.tgz", "r:gz")
                     # This list will be used to store any files that have been found with the pattern needed.
                     files = []
                     for index, member in enumerate(tar.getmembers()):
-                        zipped_files_checked_progress(index + 1, len(tar.getmembers()), value[3])
                         f = tar.extractfile(member)
                         if f is not None:
                             pattern = re.search(str(value[3]), str(f.read()))
                             if pattern != None:
                                 files.append(member)
-                        root.update()
+                        label_message(f"Searching zip folder {day}.tgz for the Feed Event ID {value[3]}. Progress - {round((index + 1) / len(tar.getmembers()) * 100, 2)}%", 310 , 420, round((index + 1) / len(tar.getmembers()) * 100, 2))
                     tar.extractall(path = event_folder, members=files)
                     tar.close()
 
@@ -703,8 +701,7 @@ def start_gathering_packets_details_functions():
         # Verifying JSON and XML Files with the feed event id is matched to a tag
         if value[0] == 2:
             non_event_files = []
-            for i in os.listdir(event_folder):
-                print(i)
+            for index, i in enumerate(os.listdir(event_folder)):
                 if ".json" in str(i):
                     f = open(f"{event_folder}/{i}")
                     content = json.loads(f.read())
@@ -718,14 +715,14 @@ def start_gathering_packets_details_functions():
                         print("REMOVING JSON FILE")
                         f.close()
                         non_event_files.append(str(i))
-
+                label_message(f"Verifying files pulled have Feed Event ID {value[3]}. Progress - {round((index + 1) / len(os.listdir(event_folder)) * 100, 2)}%", 320 , 420, round((index + 1) / len(os.listdir(event_folder)) * 100, 2))
+            
             for files in non_event_files:
                 print(f"REMOVING {files}")
                 os.remove(os.path.join(event_folder, str(files)))
         if value[0] == 3:
             non_event_files = []
-            for i in os.listdir(event_folder):
-                print(i)
+            for index, i in enumerate(os.listdir(event_folder)):
                 if ".xml" in str(i):
                     f = open(f"{event_folder}/{i}")
                     soup = BeautifulSoup(f.read(), 'xml')
@@ -745,15 +742,14 @@ def start_gathering_packets_details_functions():
                         f.close()
                         non_event_files.append(str(i))
                         print(str(i))
-            
+                label_message(f"Verifying files pulled have Feed Event ID {value[3]}. Progress - {round((index + 1) / len(os.listdir(event_folder)) * 100, 2)}%", 320 , 420, round((index + 1) / len(os.listdir(event_folder)) * 100, 2))
+
             for files in non_event_files:
                 print(f"REMOVING FILE{files}")
                 os.remove(os.path.join(event_folder, str(files)))
-
         if value[0] == 9:
             non_event_files = []
             for num, i in enumerate(os.listdir(event_folder)):
-                verify_files_pulled(num + 1, len(os.listdir(event_folder)))
                 if ".json" in str(i):
                     f = open(f"{event_folder}/{i}")
                     content = json.load(f)
@@ -804,12 +800,13 @@ def start_gathering_packets_details_functions():
                         print("REMOVING XML FILE")
                         f.close()
                         non_event_files.append(str(i))
-            
+                label_message(f"Verifying files pulled have Feed Event ID {value[3]}. Progress - {round((num + 1) / len(os.listdir(event_folder)) * 100, 2)}%", 320 , 420, round((num + 1) / len(os.listdir(event_folder)) * 100, 2))
+
             for files in non_event_files:
                 print(f"REMOVING {files}")
                 os.remove(os.path.join(event_folder, str(files)))
         zip_event_folder(event_folder)
-        events_finished(index + 1, len(events))
+        #events_finished(index + 1, len(events))
     
     events.clear()
 
@@ -846,53 +843,27 @@ def create_folders(event):
       os.makedirs(event_folder)
     return event_folder
 
-def download_files_progress(transferred, toBeTransferred):
-    if transferred > 0:
-        percentage = round(transferred / toBeTransferred * 100, 2)
-        if percentage == 100.00:
-            progress_label.place(x=400, y=420)
-            progress_label_string.set(f"All files have been downloaded.")
-            progress_bar["value"] = 0
-        else:
-            progress_label.place(x=400, y=420)
-            progress_label_string.set(f"Downloaded {percentage}% of files.")
-            progress_bar["value"] = percentage
+def label_message(message, x, y, percentage):
+    if percentage == 100.00:
+        progress_label.place(x=400, y=420)
+        progress_label_string.set("Waiting for next process to start")
+        percentage = 0
+        progress_bar["value"] = percentage
+    else:
+        progress_label.place(x=x, y=y)
+        progress_label_string.set(message)
+        progress_bar["value"] = percentage
 
-def download_zip_progress(transferred, toBeTransferred):
-    if transferred > 0:
-        percentage = round(transferred / toBeTransferred * 100, 2)
-        if percentage == 100.00:
-            progress_label.place(x=400, y=420)
-            progress_label_string.set(f"Zip file has been downloaded")
-            progress_bar["value"] = 0
-        else:
-            progress_label.place(x=400, y=420)
-            progress_label_string.set(f"Downloading zip file - Progress {percentage}%")
-            progress_bar["value"] = percentage
-
-def zipped_files_checked_progress(transferred, toBeTransferred, feed_event_id):
-    if transferred > 0:
-        percentage = round(transferred / toBeTransferred * 100, 2)
-        if percentage == 100.00:
-            progress_bar["value"] = 0
-            progress_label.place(x=400, y=420)
-            progress_label_string.set(f"All files have been checked and verified")
-        else:
-            progress_label.place(x=320, y=420)
-            progress_label_string.set(f"Checking files for Feed Event ID {feed_event_id}. {percentage}% of files checked")
-            progress_bar["value"] = percentage
-
-def verify_files_pulled(transferred, toBeTransferred):
-    if transferred > 0:
-        percentage = round(transferred / toBeTransferred * 100, 2)
-        if percentage == 100.00:
-            progress_label.place(x=400, y=420)
-            progress_label_string.set(f"All files have been checked and verified")
-            progress_bar["value"] = 0
-        else:
-            progress_label.place(x=300, y=420)
-            progress_label_string.set(f"Verifying files pulled from zips. {percentage}% of files checked")
-            progress_bar["value"] = percentage
+def download_zip_progress(transferred, toBeTransferred, message, positionX, positionY, percentage):
+    if percentage == 100.00:
+        progress_label.place(x=400, y=420)
+        progress_label_string.set("Waiting for next process to start")
+        percentage = 0
+        progress_bar["value"] = percentage
+    else:
+        progress_label.place(x=positionX, y=positionY)
+        progress_label_string.set(message)
+        progress_bar["value"] = percentage
 
 def zip_event_folder(event_folder):
     print("ZIPPING FOLDER")
@@ -900,10 +871,10 @@ def zip_event_folder(event_folder):
     shutil.make_archive(os.path.join(event_folder), 'zip', os.path.join(event_folder))
     shutil.rmtree(event_folder)
 
-def events_finished(x, y):
-    percentage = round(x / y * 100, 2)
-    total_progress_label_string.set(f"Total Progress: Event {x} of {y}")
-    total_progress_bar["value"] = percentage
+# def events_finished(x, y):
+#     percentage = round(x / y * 100, 2)
+#     total_progress_label_string.set(f"Total Progress: Event {x} of {y}")
+#     total_progress_bar["value"] = percentage
 
 root = Tk()
 root.title("888 Packet Handler")
@@ -994,4 +965,6 @@ total_progress_label.place(x=400, y=480)
 # Total Progress Bar
 total_progress_bar = Progressbar(root, orient=HORIZONTAL, length=900, mode='determinate')
 total_progress_bar.place(x=50, y=510)
+
+print(total_progress_bar["value"])
 root.mainloop()
